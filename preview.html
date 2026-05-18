@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>NexusMarket — Игровая экономика, собранная заново</title>
+<meta name="theme-color" content="#000000" />
+<style>
+  /* ────────────────────────────────────────────────────────────
+     NexusMarket — standalone preview of the home screen.
+     Implements the iOS 26 design system from Plan A.md and the
+     motion design specified by design-motion-principles + impeccable.
+     No build step required — just open this file.
+     ──────────────────────────────────────────────────────────── */
+
+  :root {
+    --bg: #050507;
+    --fg: #fff;
+    --muted: #8E8E93;
+    --line: rgba(255,255,255,0.05);
+    --border: rgba(255,255,255,0.12);
+    --glass: rgba(255,255,255,0.06);
+    --glass-strong: rgba(255,255,255,0.10);
+    --success: #30D158;
+    --warning: #FF9F0A;
+    --error:   #FF453A;
+    --radius: 22px;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+    --font-display: "SF Pro Display", "Geist", "Cabinet Grotesk", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-sans:    "SF Pro Text", "Geist", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --font-mono:    "SF Mono", "Geist Mono", "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #000;
+    color: #fff;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100dvh;
+  }
+  ::selection { background: rgba(255,255,255,0.18); color: #fff; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; }
+
+  /* ── Atmosphere ──────────────────────────────────────────────── */
+
+  .stripes {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.05) 0,
+      rgba(255,255,255,0.05) 3px,
+      transparent 3px,
+      transparent 24px
+    );
+    background-size: 120px 120px;
+    animation: drift 18s linear infinite;
+  }
+  .stripes-fine {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.04) 0,
+      rgba(255,255,255,0.04) 1px,
+      transparent 1px,
+      transparent 12px
+    );
+  }
+  @keyframes drift {
+    from { background-position: 0 0; }
+    to   { background-position: 120px 120px; }
+  }
+  .aurora {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(60% 50% at 20% 20%, rgba(120,180,255,0.10), transparent 60%),
+      radial-gradient(50% 40% at 85% 30%, rgba(255,90,130,0.08),  transparent 60%),
+      radial-gradient(60% 50% at 50% 90%, rgba(80,230,170,0.07),  transparent 60%);
+    filter: blur(40px);
+    animation: aurora 14s ease-in-out infinite;
+  }
+  @keyframes aurora {
+    0%, 100% { transform: translate3d(0,0,0) scale(1); }
+    50%      { transform: translate3d(2%, -1%, 0) scale(1.08); }
+  }
+  .vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.7) 90%);
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 60;
+    mix-blend-mode: overlay; opacity: 0.04;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.85'/></svg>");
+  }
+
+  /* ── Glass surface (Plan A: backdrop-filter blur(40px)) ──────── */
+
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(40px) saturate(140%);
+    -webkit-backdrop-filter: blur(40px) saturate(140%);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(255,255,255,0.03);
+    border-radius: var(--radius);
+  }
+  .glass-strong {
+    background: var(--glass-strong);
+    backdrop-filter: blur(60px) saturate(160%);
+    -webkit-backdrop-filter: blur(60px) saturate(160%);
+    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(255,255,255,0.04), 0 30px 80px -20px rgba(0,0,0,0.8);
+    border-radius: var(--radius);
+  }
+
+  /* ── Header ─────────────────────────────────────────────────── */
+
+  header.nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    padding: 14px 16px 0;
+  }
+  @media (min-width: 640px) { header.nav { padding: 20px 24px 0; } }
+  .nav-inner {
+    margin: 0 auto; max-width: 1400px;
+    height: 56px; padding: 0 12px 0 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border-radius: 999px;
+    transition: background .35s var(--ease-out-expo), border-color .35s var(--ease-out-expo);
+  }
+  body.scrolled .nav-inner {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.14);
+  }
+  .nav-brand { display: inline-flex; align-items: center; gap: 10px; padding-left: 4px; font-weight: 600; letter-spacing: -0.01em; font-size: 15px; }
+  .logo {
+    display: grid; place-items: center; height: 32px; width: 32px; border-radius: 12px;
+    background: #fff; color: #000;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+  }
+  .nav ul { list-style: none; margin: 0; padding: 0; display: none; gap: 4px; align-items: center; }
+  @media (min-width: 768px) { .nav ul { display: flex; } }
+  .nav ul a {
+    display: inline-block; padding: 8px 14px; font-size: 13.5px;
+    color: rgba(255,255,255,0.7); border-radius: 999px;
+    transition: background .25s var(--ease-out-expo), color .25s var(--ease-out-expo);
+  }
+  .nav ul a:hover { background: rgba(255,255,255,0.05); color: #fff; }
+
+  .nav-actions { display: flex; align-items: center; gap: 6px; }
+  .icon-btn {
+    display: grid; place-items: center; height: 36px; width: 36px;
+    border-radius: 999px; background: transparent; color: rgba(255,255,255,0.8); border: 0; cursor: pointer;
+    transition: background .25s var(--ease-out-expo);
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .login-btn {
+    margin-left: 4px; height: 36px; padding: 0 14px;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #fff; color: #000; border-radius: 999px; font-size: 13px; font-weight: 500;
+    transition: transform .25s var(--ease-out-expo);
+  }
+  .login-btn:active { transform: scale(0.97); }
+
+  /* ── Hero ────────────────────────────────────────────────────── */
+
+  .hero {
+    position: relative; isolate: isolate; overflow: hidden;
+    min-height: 100dvh; width: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+  }
+  .hero-content {
+    position: relative; z-index: 10;
+    margin: 0 auto; max-width: 1120px; padding: 128px 24px 96px;
+    display: flex; flex-direction: column; align-items: center; gap: 36px; text-align: center;
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 999px;
+    border: 1px solid rgba(48,209,88,0.30);
+    background: rgba(48,209,88,0.10);
+    color: #6ee9a3;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+  }
+  .badge .dot {
+    width: 6px; height: 6px; border-radius: 999px; background: #30D158;
+    animation: pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.55; transform: scale(0.9); }
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.04em; line-height: 0.95;
+    margin: 0;
+  }
+  h1.headline {
+    font-size: clamp(48px, 9vw, 128px);
+    max-width: 1100px;
+  }
+  h1.headline .muted { color: rgba(255,255,255,0.55); }
+
+  p.lede {
+    margin: 0; max-width: 640px; color: rgba(255,255,255,0.6);
+    font-size: 17px; line-height: 1.55;
+  }
+
+  .ctas { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  /* Magnetic CTA: spring-based via JS, GPU-only via transform */
+  .magnet {
+    position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 56px; padding: 0 28px; border-radius: 999px;
+    font-size: 15px; font-weight: 500;
+    overflow: hidden; will-change: transform;
+    transition: transform 80ms linear;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+    cursor: pointer;
+  }
+  .magnet.primary { background: #fff; color: #000; }
+  .magnet.ghost { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.15); }
+  .magnet .inner { display: inline-flex; align-items: center; gap: 8px; transition: transform 80ms linear; }
+  .magnet .shimmer {
+    position: absolute; inset: 0; pointer-events: none;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.30), transparent);
+    transition: transform 1s var(--ease-out-expo);
+  }
+  .magnet:hover .shimmer { transform: translateX(100%); }
+  .magnet:active { transform: scale(0.97) translateY(1px); }
+
+  /* ── Hero Orb ────────────────────────────────────────────────── */
+
+  .orb {
+    position: absolute; left: 50%; top: 50%;
+    width: min(640px, 90vw); height: min(640px, 90vw);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    filter: blur(0.4px);
+  }
+  .orb-core {
+    position: absolute; inset: 28%;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.45), rgba(255,255,255,0.05) 55%, transparent 70%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.4),
+      inset 0 -40px 80px rgba(255,255,255,0.05),
+      0 0 80px rgba(255,255,255,0.06);
+    animation: coreIn 1.4s var(--ease-out-expo) both;
+  }
+  @keyframes coreIn {
+    from { opacity: 0; transform: scale(0.6); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .orb-ring {
+    position: absolute; border-radius: 999px;
+    will-change: transform;
+  }
+  .ring-1 {
+    inset: 10%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.12) 90deg, transparent 180deg, rgba(255,255,255,0.08) 270deg, transparent 360deg);
+    -webkit-mask: radial-gradient(closest-side, transparent 78%, black 79%, black 80%, transparent 81%);
+            mask: radial-gradient(closest-side, transparent 78%, black 79%, black 80%, transparent 81%);
+    animation: spin 36s linear infinite;
+  }
+  .ring-2 {
+    inset: 2%;
+    background: conic-gradient(from 90deg, transparent 0deg, rgba(48,209,88,0.18) 60deg, transparent 120deg, rgba(255,159,10,0.12) 220deg, transparent 280deg);
+    -webkit-mask: radial-gradient(closest-side, transparent 92%, black 93%, black 94%, transparent 95%);
+            mask: radial-gradient(closest-side, transparent 92%, black 93%, black 94%, transparent 95%);
+    animation: spin-rev 56s linear infinite;
+  }
+  .ring-3 {
+    inset: -5%;
+    background: conic-gradient(from 180deg, transparent, rgba(255,255,255,0.08), transparent);
+    -webkit-mask: radial-gradient(closest-side, transparent 96%, black 97%, black 98%, transparent 99%);
+            mask: radial-gradient(closest-side, transparent 96%, black 97%, black 98%, transparent 99%);
+    animation: spin 80s linear infinite;
+  }
+  @keyframes spin     { to { transform: rotate(360deg); } }
+  @keyframes spin-rev { to { transform: rotate(-360deg); } }
+
+  /* ── Live stats glass card ───────────────────────────────────── */
+
+  .stats {
+    width: 100%; max-width: 760px; margin-top: 24px;
+    display: grid; grid-template-columns: repeat(2, 1fr); 
+  }
+  @media (min-width: 640px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .stat { padding: 20px; text-align: left; border-right: 1px solid rgba(255,255,255,0.10); }
+  .stat:last-child { border-right: 0; }
+  @media (max-width: 639px) {
+    .stat:nth-child(2n) { border-right: 0; }
+    .stat:nth-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,0.10); }
+  }
+  .stat .label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .stat .value { font-family: var(--font-mono); font-size: 24px; font-weight: 600; letter-spacing: -0.02em; color: #fff; font-variant-numeric: tabular-nums; }
+  .stat .trend { font-size: 12px; margin-top: 4px; color: rgba(255,255,255,0.45); }
+  .stat .trend.success { color: #6ee9a3; }
+
+  /* ── Scroll hint ─────────────────────────────────────────────── */
+
+  .scroll-hint {
+    position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+    z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    opacity: 0; animation: fadeIn 0.6s var(--ease-out-expo) 1.4s forwards;
+  }
+  .scroll-hint .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .scroll-hint .line {
+    width: 1px; height: 32px; background: rgba(255,255,255,0.30);
+    animation: scrollY 2.2s ease-in-out infinite;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes scrollY {
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    50%      { transform: translateY(8px); opacity: 0.4; }
+  }
+
+  /* ── Sections ────────────────────────────────────────────────── */
+
+  section.block { position: relative; padding: 128px 24px; overflow: hidden; }
+  .container { position: relative; max-width: 1400px; margin: 0 auto; }
+  .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  h2.section-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(36px, 5vw, 64px);
+    letter-spacing: -0.04em; line-height: 0.95;
+    margin: 12px 0 0;
+  }
+  h2.section-title .muted { color: rgba(255,255,255,0.45); }
+  .section-head { display: grid; gap: 20px; align-items: end; grid-template-columns: 1fr; margin-bottom: 48px; }
+  @media (min-width: 768px) { .section-head { grid-template-columns: 1fr auto; } }
+  .section-head p { max-width: 420px; color: rgba(255,255,255,0.55); font-size: 14.5px; line-height: 1.6; margin: 0; }
+
+  /* Marketplace cards */
+  .grid-mp { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .grid-mp { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 1024px) { .grid-mp { grid-template-columns: repeat(4, 1fr); } }
+  .mp-card { padding: 20px; display: flex; flex-direction: column; transition: background .5s var(--ease-out-expo); cursor: pointer; }
+  .mp-card:hover { background: rgba(255,255,255,0.09); }
+  .mp-thumb {
+    position: relative; aspect-ratio: 4/3; margin-bottom: 16px;
+    border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden;
+    background:
+      radial-gradient(70% 60% at 30% 30%, rgba(255,255,255,0.16), transparent 60%),
+      radial-gradient(60% 50% at 80% 70%, rgba(48,209,88,0.10), transparent 60%),
+      rgba(255,255,255,0.04);
+  }
+  .mp-thumb .corner-tag { position: absolute; left: 12px; top: 12px; }
+  .mp-thumb .game { position: absolute; left: 12px; bottom: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.55); }
+  .mp-card h3 { margin: 0; font-size: 15px; font-weight: 500; line-height: 1.35; color: #fff; }
+  .mp-meta { margin-top: 4px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: rgba(255,255,255,0.50); }
+  .mp-meta .dot-sep { color: rgba(255,255,255,0.25); }
+  .mp-foot { margin-top: auto; padding-top: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .mp-price { font-family: var(--font-mono); font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: #fff; font-variant-numeric: tabular-nums; }
+  .mp-buy {
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 999px;
+    padding: 6px 14px; font-size: 11.5px; color: rgba(255,255,255,0.85);
+    transition: background .35s var(--ease-out-expo), color .35s, border-color .35s;
+  }
+  .mp-card:hover .mp-buy { background: #fff; color: #000; border-color: rgba(255,255,255,0.40); }
+
+  /* Automation showcase */
+  .automation { display: grid; align-items: center; gap: 48px; grid-template-columns: 1fr; }
+  @media (min-width: 1024px) { .automation { grid-template-columns: 5fr 6fr; } }
+  .auto-list { margin: 32px 0 0; padding: 0; list-style: none; }
+  .auto-list li {
+    display: flex; align-items: flex-start; gap: 12px; padding: 6px 0; color: rgba(255,255,255,0.7); font-size: 14px;
+  }
+  .auto-list .pip { display: inline-block; width: 4px; height: 4px; margin-top: 9px; border-radius: 999px; background: rgba(255,255,255,0.6); flex-shrink: 0; }
+  .logs {
+    border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.40);
+    padding: 16px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5;
+  }
+  .log-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; opacity: 0; transform: translateX(-8px); }
+  .log-row.in { opacity: 1; transform: translateX(0); transition: opacity .5s var(--ease-out-expo), transform .5s var(--ease-out-expo); }
+  .log-time { color: rgba(255,255,255,0.30); font-variant-numeric: tabular-nums; }
+  .log-mark { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 4px; font-size: 10px; }
+  .log-mark.success { background: rgba(48,209,88,0.15); color: #6ee9a3; }
+  .log-mark.warning { background: rgba(255,159,10,0.15); color: #ffd07a; }
+  .log-mark.neutral { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+  .log-text { color: rgba(255,255,255,0.85); }
+  .log-shimmer { position: relative; height: 1px; margin-top: 8px; background: rgba(255,255,255,0.05); overflow: hidden; }
+  .log-shimmer::after { content: ""; position: absolute; inset-block: 0; left: -50%; width: 50%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: sweep 2.4s ease-in-out infinite; }
+  @keyframes sweep { from { transform: translateX(0); } to { transform: translateX(400%); } }
+
+  .auto-mini { margin-top: 16px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
+  .auto-mini .cell { border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); border-radius: 14px; padding: 12px; }
+  .auto-mini .lbl { font-size: 10.5px; letter-spacing: 0.10em; text-transform: uppercase; color: rgba(255,255,255,0.40); }
+  .auto-mini .val { margin-top: 4px; font-family: var(--font-mono); font-size: 13px; }
+  .auto-mini .val.success { color: #6ee9a3; }
+  .auto-mini .val.warning { color: #ffd07a; }
+
+  /* Modules grid */
+  .modules { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .modules { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 768px) { .modules { grid-template-columns: repeat(3, 1fr); } }
+  .module {
+    position: relative; padding: 28px; border-radius: var(--radius);
+    border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.02);
+    transition: border-color .5s var(--ease-out-expo), background .5s var(--ease-out-expo);
+    overflow: hidden;
+  }
+  .module:hover { border-color: rgba(255,255,255,0.20); background: rgba(255,255,255,0.05); }
+  .module::before {
+    content: ""; position: absolute; inset: -1px; border-radius: inherit; opacity: 0;
+    background: radial-gradient(80% 60% at 50% 0%, rgba(255,255,255,0.08), transparent 70%);
+    transition: opacity .5s var(--ease-out-expo);
+    pointer-events: none;
+  }
+  .module:hover::before { opacity: 1; }
+  .module .head { display: flex; align-items: center; justify-content: space-between; }
+  .module .icn {
+    display: grid; place-items: center; width: 44px; height: 44px;
+    border-radius: 14px; background: rgba(255,255,255,0.08); color: #fff;
+  }
+  .module .fn { font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,0.35); transition: color .35s; }
+  .module:hover .fn { color: rgba(255,255,255,0.7); }
+  .module h3 { margin: 32px 0 6px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+  .module p { margin: 0; max-width: 36ch; font-size: 13.5px; line-height: 1.55; color: rgba(255,255,255,0.55); }
+  .module .go { margin-top: 24px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: rgba(255,255,255,0.45); transition: color .35s; }
+  .module:hover .go { color: #fff; }
+  .module .go .arr { transition: transform .5s var(--ease-out-expo); }
+  .module:hover .go .arr { transform: translateX(4px); }
+  .module.span2 { grid-column: span 1; }
+  @media (min-width: 768px) { .module.span2 { grid-column: span 2; } }
+
+  /* Final CTA */
+  .final-cta {
+    position: relative; padding: 80px 32px; text-align: center;
+    border-radius: 28px; border: 1px solid rgba(255,255,255,0.10);
+    background:
+      radial-gradient(80% 100% at 50% 0%, rgba(255,255,255,0.10), transparent 70%),
+      #0A0A0C;
+    overflow: hidden;
+  }
+  @media (min-width: 640px) { .final-cta { padding: 120px 64px; } }
+  .final-cta h2 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.04em; line-height: 0.95; font-size: clamp(40px, 7vw, 96px); margin: 0; position: relative; }
+  .final-cta p { position: relative; max-width: 560px; margin: 20px auto 0; color: rgba(255,255,255,0.6); font-size: 16px; line-height: 1.55; }
+  .final-cta .ctas { margin-top: 40px; }
+
+  /* Footer */
+  footer.site {
+    margin-top: 128px;
+    padding: 64px 24px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .footer-grid { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 40px 16px; }
+  @media (min-width: 768px) { .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr; } }
+  .footer-brand p { max-width: 28ch; margin: 8px 0 0; font-size: 13px; line-height: 1.55; color: rgba(255,255,255,0.45); }
+  .footer-col h4 { margin: 0 0 16px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+  .footer-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col a { font-size: 13.5px; color: rgba(255,255,255,0.65); transition: color .25s; }
+  .footer-col a:hover { color: #fff; }
+  .hairline { height: 1px; max-width: 1400px; margin: 48px auto 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18) 50%, transparent); }
+  .footer-meta { max-width: 1400px; margin: 24px auto 0; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 12px; color: rgba(255,255,255,0.35); }
+  .footer-meta nav { display: flex; gap: 20px; }
+
+  /* ── Reduced motion (mandatory per design-motion-principles) ─── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Reveal-on-scroll */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s var(--ease-out-expo), transform .8s var(--ease-out-expo); }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  /* Hero entrance staggered */
+  .stagger > * { opacity: 0; transform: translateY(24px) scale(0.98); filter: blur(8px); }
+  .stagger.run > * { animation: heroIn 0.9s var(--ease-out-expo) forwards; }
+  .stagger.run > *:nth-child(1) { animation-delay: 0.10s; }
+  .stagger.run > *:nth-child(2) { animation-delay: 0.20s; }
+  .stagger.run > *:nth-child(3) { animation-delay: 0.32s; }
+  .stagger.run > *:nth-child(4) { animation-delay: 0.44s; }
+  .stagger.run > *:nth-child(5) { animation-delay: 0.58s; }
+  @keyframes heroIn {
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+</style>
+</head>
+<body>
+  <div class="grain"></div>
+
+  <!-- ─── Header ───────────────────────────────────────────── -->
+  <header class="nav">
+    <nav class="nav-inner" aria-label="Primary">
+      <a class="nav-brand" href="#">
+        <span class="logo" aria-hidden>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 12V2L12 12V2" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span>NexusMarket</span>
+      </a>
+      <ul>
+        <li><a href="#marketplace">Маркет</a></li>
+        <li><a href="#shop">Магазин</a></li>
+        <li><a href="#rental">Аренда</a></li>
+        <li><a href="#automation">Авто</a></li>
+        <li><a href="#support">Поддержка</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="icon-btn" aria-label="Поиск">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </button>
+        <button class="icon-btn" aria-label="Корзина">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </button>
+        <a class="login-btn" href="#">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Войти</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ─── Hero ─────────────────────────────────────────────── -->
+  <section class="hero" id="top">
+    <div class="aurora"></div>
+    <div class="stripes"></div>
+    <div class="orb" aria-hidden>
+      <div class="orb-ring ring-3"></div>
+      <div class="orb-ring ring-2"></div>
+      <div class="orb-ring ring-1"></div>
+      <div class="orb-core"></div>
+    </div>
+    <div class="vignette"></div>
+
+    <div class="hero-content stagger" id="heroStagger">
+      <div><span class="badge"><span class="dot"></span> Live · 2 481 продавцов онлайн</span></div>
+      <h1 class="display headline">Игровая экономика,<br><span class="muted">собранная заново.</span></h1>
+      <p class="lede">Маркетплейс, аренда, автодоставка и боты для FunPay, Starvell и Playerok — в одной платформе. Эскроу, мгновенные ключи, 552 функции под капотом.</p>
+      <div class="ctas">
+        <a class="magnet primary" href="#marketplace" data-magnet>
+          <span class="shimmer"></span>
+          <span class="inner">Открыть маркет
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+          </span>
+        </a>
+        <a class="magnet ghost" href="#automation" data-magnet>
+          <span class="shimmer"></span>
+          <span class="inner">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg>
+            Автоматизация
+          </span>
+        </a>
+      </div>
+      <div class="glass-strong stats">
+        <div class="stat"><div class="label">Сделок / 24ч</div><div class="value">14 287</div><div class="trend">+12.4%</div></div>
+        <div class="stat"><div class="label">GMV месяц</div><div class="value">₽ 47.2M</div><div class="trend">+8.1%</div></div>
+        <div class="stat"><div class="label">Avg ETA</div><div class="value">3.2 сек</div><div class="trend success">−0.4с</div></div>
+        <div class="stat"><div class="label">Дисп. resolved</div><div class="value">98.6%</div><div class="trend success">+0.3%</div></div>
+      </div>
+    </div>
+
+    <div class="scroll-hint" aria-hidden>
+      <span class="eyebrow">scroll</span>
+      <span class="line"></span>
+    </div>
+  </section>
+
+  <!-- ─── Marketplace preview ─────────────────────────────── -->
+  <section class="block" id="marketplace">
+    <div class="stripes-fine"></div>
+    <div class="container">
+      <header class="section-head reveal">
+        <div>
+          <div class="eyebrow">Маркетплейс · live</div>
+          <h2 class="section-title">Торговля без посредников.<br><span class="muted">Эскроу — за 3 секунды.</span></h2>
+        </div>
+        <p>Аккаунты, ключи, валюта, услуги, скины. Гарант-сервис, диспуты, мгновенная авто-доставка кодов.</p>
+      </header>
+
+      <div class="grid-mp" id="mpGrid">
+        <!-- cards injected via JS for staggered reveal -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Automation showcase ─────────────────────────────── -->
+  <section class="block" id="automation">
+    <div class="container automation">
+      <div class="reveal">
+        <div class="eyebrow">Автоматизация · 60 функций</div>
+        <h2 class="section-title">Боты работают,<br><span class="muted">пока ты спишь.</span></h2>
+        <p style="max-width: 48ch; margin-top: 24px; color: rgba(255,255,255,0.6); font-size: 15px; line-height: 1.65;">Парсим заказы, синкаем цены, отвечаем покупателям, поднимаем лоты, мониторим конкурентов. FunPay, Starvell, Playerok из коробки.</p>
+        <ul class="auto-list">
+          <li><span class="pip"></span><span>Multi-account FunPay c прокси-менеджером</span></li>
+          <li><span class="pip"></span><span>Динамические цены по спросу</span></li>
+          <li><span class="pip"></span><span>Шаблоны автоответов и автоотзывов</span></li>
+          <li><span class="pip"></span><span>Webhook-менеджер с HMAC подписью</span></li>
+          <li><span class="pip"></span><span>Real-time логи и алерты в Telegram/Discord</span></li>
+        </ul>
+      </div>
+
+      <div class="glass-strong reveal" style="padding: 24px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px;">
+          <div style="display:flex; align-items:center; gap: 8px;">
+            <span class="badge"><span class="dot"></span> real-time</span>
+            <span style="font-size:12px; color: rgba(255,255,255,0.45)">bot.logs</span>
+          </div>
+          <span style="font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.35)">14 287 events / 24h</span>
+        </div>
+        <div class="logs" id="logsBox">
+          <!-- log rows injected via JS -->
+          <div class="log-shimmer"></div>
+        </div>
+        <div class="auto-mini">
+          <div class="cell"><div class="lbl">FunPay</div><div class="val success">online</div></div>
+          <div class="cell"><div class="lbl">Starvell</div><div class="val success">online</div></div>
+          <div class="cell"><div class="lbl">Playerok</div><div class="val warning">syncing</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Modules grid ─────────────────────────────────────── -->
+  <section class="block" id="modules">
+    <div class="container">
+      <header class="section-head reveal">
+        <div>
+          <div class="eyebrow">12 модулей · 552 функции</div>
+          <h2 class="section-title">Всё, что нужно платформе.<br><span class="muted">В одном месте.</span></h2>
+        </div>
+      </header>
+      <div class="modules" id="modulesGrid"></div>
+    </div>
+  </section>
+
+  <!-- ─── Final CTA ───────────────────────────────────────── -->
+  <section class="block" style="padding-top: 16px;">
+    <div class="container">
+      <div class="final-cta reveal">
+        <div class="stripes"></div>
+        <h2>Готов запуститься?</h2>
+        <p>14 дней бесплатно. Подключи FunPay/Starvell/Playerok за 3 минуты — и забудь про ручные подъёмы лотов.</p>
+        <div class="ctas">
+          <a class="magnet primary" href="#" data-magnet>
+            <span class="shimmer"></span>
+            <span class="inner">Создать аккаунт
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </span>
+          </a>
+          <a class="magnet ghost" href="#" data-magnet>
+            <span class="shimmer"></span>
+            <span class="inner">Документация API</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ──────────────────────────────────────────── -->
+  <footer class="site">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div style="font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">NexusMarket</div>
+        <p>Игровая экономика нового поколения. 552 функции, эскроу, автоматизация.</p>
+      </div>
+      <div class="footer-col"><h4>Платформа</h4><ul><li><a href="#">Маркет</a></li><li><a href="#">Магазин</a></li><li><a href="#">Аренда</a></li><li><a href="#">Автоматизация</a></li></ul></div>
+      <div class="footer-col"><h4>Аккаунт</h4><ul><li><a href="#">Профиль</a></li><li><a href="#">Кошелёк</a></li><li><a href="#">Рефералы</a></li><li><a href="#">API-ключи</a></li></ul></div>
+      <div class="footer-col"><h4>Поддержка</h4><ul><li><a href="#">Тикеты</a></li><li><a href="#">FAQ</a></li><li><a href="#">Статус</a></li><li><a href="#">Changelog</a></li></ul></div>
+      <div class="footer-col"><h4>Разработчикам</h4><ul><li><a href="#">API Docs</a></li><li><a href="#">Sandbox</a></li><li><a href="#">SDK</a></li><li><a href="#">Webhooks</a></li></ul></div>
+    </div>
+    <div class="hairline"></div>
+    <div class="footer-meta">
+      <div>© <span id="year"></span> NexusMarket. Все права защищены.</div>
+      <nav>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="#">Cookies</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    // Year stamp
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Hero stagger entrance
+    requestAnimationFrame(() => {
+      document.getElementById('heroStagger').classList.add('run');
+    });
+
+    // Header scroll state
+    const onScroll = () => {
+      document.body.classList.toggle('scrolled', window.scrollY > 24);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Reveal-on-scroll using IntersectionObserver (avoid scroll listener — taste-skill rule)
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      }
+    }, { threshold: 0.15, rootMargin: '0px 0px -80px 0px' });
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+    // Magnetic CTA — physics outside React render cycle (taste-skill §4)
+    const lerp = (a, b, t) => a + (b - a) * t;
+    document.querySelectorAll('[data-magnet]').forEach((el) => {
+      const inner = el.querySelector('.inner');
+      let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0;
+      const onMove = (e) => {
+        const r = el.getBoundingClientRect();
+        const dx = e.clientX - (r.left + r.width / 2);
+        const dy = e.clientY - (r.top + r.height / 2);
+        tx = Math.max(-12, Math.min(12, dx * 0.25));
+        ty = Math.max(-8,  Math.min(8,  dy * 0.25));
+      };
+      const onLeave = () => { tx = 0; ty = 0; };
+      const tick = () => {
+        cx = lerp(cx, tx, 0.18);
+        cy = lerp(cy, ty, 0.18);
+        el.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+        if (inner) inner.style.transform = `translate3d(${cx * 0.6}px, ${cy * 0.6}px, 0)`;
+        raf = requestAnimationFrame(tick);
+      };
+      el.addEventListener('mousemove', onMove);
+      el.addEventListener('mouseleave', onLeave);
+      tick();
+    });
+
+    // Marketplace cards data + staggered reveal
+    const mpItems = [
+      { game: 'Genshin Impact',     title: 'AR60 · 5x 5★ + Raiden C2',  price: '₽ 18 400',  seller: 'voltage_eu', rating: 4.97, online: true },
+      { game: 'Steam · CS2',        title: 'Karambit | Doppler (FN)',  price: '₽ 142 700', seller: 'skin.lab',   rating: 5.00, online: true },
+      { game: 'World of Warcraft',  title: 'Boost 70→80 · 24h',         price: '₽ 4 290',   seller: 'tideguild',  rating: 4.92, online: false },
+      { game: 'Valorant',           title: 'Immortal · 27 skins',       price: '₽ 9 850',   seller: 'kira.shop',  rating: 4.88, online: true }
+    ];
+    const mpGrid = document.getElementById('mpGrid');
+    mpItems.forEach((it, i) => {
+      const node = document.createElement('div');
+      node.className = 'glass mp-card reveal';
+      node.style.transitionDelay = (i * 0.07) + 's';
+      node.innerHTML = `
+        <div class="mp-thumb">
+          <span class="badge corner-tag" style="${it.online ? '' : 'border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.85);'}">
+            ${it.online ? '<span class="dot"></span> online' : 'offline'}
+          </span>
+          <span class="game">${it.game}</span>
+        </div>
+        <h3>${it.title}</h3>
+        <div class="mp-meta"><span>${it.seller}</span><span class="dot-sep">·</span><span style="font-family: var(--font-mono);">★ ${it.rating.toFixed(2)}</span></div>
+        <div class="mp-foot">
+          <span class="mp-price">${it.price}</span>
+          <span class="mp-buy">Купить</span>
+        </div>
+      `;
+      mpGrid.appendChild(node);
+      io.observe(node);
+    });
+
+    // Bot logs — appear sequentially
+    const logs = [
+      { t: '00:14:02', m: 'ok', tone: 'success', text: 'FunPay · автоподнятие 47 лотов' },
+      { t: '00:14:01', m: 'ok', tone: 'success', text: 'Starvell · sync prices ↔ NexusMarket' },
+      { t: '00:13:58', m: 'ok', tone: 'success', text: 'Playerok · 3 заказа доставлено' },
+      { t: '00:13:51', m: 'i',  tone: 'neutral', text: 'Telegram-бот · уведомление продавцу' },
+      { t: '00:13:44', m: '!',  tone: 'warning', text: 'Конкурент снизил цену → авто-подстройка' },
+      { t: '00:13:30', m: 'ok', tone: 'success', text: 'Discord webhook · /sales summary' }
+    ];
+    const logsBox = document.getElementById('logsBox');
+    const shimmer = logsBox.querySelector('.log-shimmer');
+    logs.forEach((log, i) => {
+      const row = document.createElement('div');
+      row.className = 'log-row';
+      row.innerHTML = `
+        <span class="log-time">${log.t}</span>
+        <span class="log-mark ${log.tone}">${log.m}</span>
+        <span class="log-text">${log.text}</span>
+      `;
+      logsBox.insertBefore(row, shimmer);
+      setTimeout(() => row.classList.add('in'), 400 + i * 120);
+    });
+
+    // Modules grid
+    const modules = [
+      { icon:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18"/><path d="M8 6V4a4 4 0 0 1 8 0v2"/>', title:'Маркетплейс',    n:82, desc:'Листинги, фильтры, эскроу, диспуты, отзывы, чат.', href:'#marketplace', span:true },
+      { icon:'<path d="M3 8h18l-1.5 11a2 2 0 0 1-2 1.7H6.5a2 2 0 0 1-2-1.7Z"/><path d="M8 8a4 4 0 0 1 8 0"/>', title:'Магазин',          n:50, desc:'Официальные товары, корзина, промокоды, кэшбэк.', href:'#shop', span:false },
+      { icon:'<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><circle cx="15" cy="11" r="0.6" fill="currentColor"/><circle cx="17" cy="13" r="0.6" fill="currentColor"/>', title:'Аренда игр',       n:40, desc:'Тарифы 1ч–30д, авто-логин, очередь, продление.', href:'#rental', span:false },
+      { icon:'<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><path d="M8 16h.01"/><path d="M16 16h.01"/>', title:'Автоматизация',    n:60, desc:'FunPay, Starvell, Playerok. Боты, парсеры, синки.', href:'#automation', span:true },
+      { icon:'<path d="M12 22s8-4 8-12V5l-8-3-8 3v5c0 8 8 12 8 12Z"/>', title:'Админ-панель',     n:70, desc:'Метрики, RBAC, модерация, финансы, аудит.', href:'#admin', span:false },
+      { icon:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', title:'Профиль',          n:50, desc:'Витрина, бейджи, кошелёк, рефералка, 2FA.', href:'#profile', span:false },
+      { icon:'<path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"/><path d="M8 14a4 4 0 0 0 8 0"/><path d="M9 9h.01"/><path d="M15 9h.01"/>', title:'Поддержка',        n:35, desc:'Тикеты, FAQ, AI-бот, SLA, status page.', href:'#support', span:false },
+      { icon:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h2"/><path d="M11 15h6"/>', title:'Заказы',           n:40, desc:'Эскроу, авто-доставка, гарантия, invoice.', href:'#orders', span:false },
+      { icon:'<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>', title:'API & SDK',        n:30, desc:'REST + GraphQL + WebSocket, webhooks, OAuth2.', href:'#api', span:false },
+      { icon:'<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>', title:'Уведомления',     n:30, desc:'Push, email, Telegram, Discord, SMS, in-app.', href:'#notifications', span:true }
+    ];
+    const modGrid = document.getElementById('modulesGrid');
+    modules.forEach((m, i) => {
+      const a = document.createElement('a');
+      a.className = 'module reveal' + (m.span ? ' span2' : '');
+      a.href = m.href;
+      a.style.transitionDelay = ((i % 4) * 0.06) + 's';
+      a.innerHTML = `
+        <div class="head">
+          <span class="icn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${m.icon}</svg>
+          </span>
+          <span class="fn">${m.n} fn</span>
+        </div>
+        <h3>${m.title}</h3>
+        <p>${m.desc}</p>
+        <div class="go">Перейти <span class="arr">→</span></div>
+      `;
+      modGrid.appendChild(a);
+      io.observe(a);
+    });
+  </script>
+</body>
+</html>
