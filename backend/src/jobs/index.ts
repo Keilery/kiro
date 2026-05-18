@@ -1,6 +1,11 @@
 import type { Worker, Queue } from "bullmq";
 import { logger } from "../utils/logger.js";
 import { rentalExpiryQueue, rentalExpiryWorker, scheduleRentalExpiryRecurring } from "./rentalExpiry.job.js";
+import {
+  orderAutoConfirmQueue,
+  orderAutoConfirmWorker,
+  scheduleOrderAutoConfirmRecurring,
+} from "./orderAutoConfirm.job.js";
 
 /**
  * Background-job lifecycle.
@@ -15,8 +20,8 @@ import { rentalExpiryQueue, rentalExpiryWorker, scheduleRentalExpiryRecurring } 
  *   2. Register them here in QUEUES and WORKERS.
  */
 
-const QUEUES: Queue[] = [rentalExpiryQueue];
-const WORKERS: Worker[] = [rentalExpiryWorker];
+const QUEUES: Queue[] = [rentalExpiryQueue, orderAutoConfirmQueue];
+const WORKERS: Worker[] = [rentalExpiryWorker, orderAutoConfirmWorker];
 
 let started = false;
 
@@ -28,6 +33,9 @@ export function startWorkers(): void {
   // by the repeat key, so calling this on every replica is safe.
   void scheduleRentalExpiryRecurring().catch((err) =>
     logger.error({ err: (err as Error).message }, "failed to schedule rental-expiry job"),
+  );
+  void scheduleOrderAutoConfirmRecurring().catch((err) =>
+    logger.error({ err: (err as Error).message }, "failed to schedule order-auto-confirm job"),
   );
 
   for (const w of WORKERS) {

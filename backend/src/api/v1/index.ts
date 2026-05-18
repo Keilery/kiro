@@ -26,8 +26,8 @@ v1Router.get("/", (_req, res) => {
     modules: [
       { name: "auth",          status: "implemented", path: "/api/v1/auth" },
       { name: "users",         status: "stub",        path: "/api/v1/users",         plannedIn: "PR#13" },
-      { name: "marketplace",   status: "stub",        path: "/api/v1/marketplace",   plannedIn: "PR#3 + PR#4" },
-      { name: "orders",        status: "stub",        path: "/api/v1/orders",        plannedIn: "PR#3" },
+      { name: "marketplace",   status: "implemented", path: "/api/v1/marketplace" },
+      { name: "orders",        status: "implemented", path: "/api/v1/orders" },
       { name: "payments",      status: "stub",        path: "/api/v1/payments",      plannedIn: "PR#10" },
       { name: "automation",    status: "stub",        path: "/api/v1/automation",    plannedIn: "PR#7" },
       { name: "rental",        status: "stub",        path: "/api/v1/rental",        plannedIn: "PR#6" },
