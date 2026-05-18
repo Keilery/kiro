@@ -1,0 +1,1119 @@
+// ─────────────────────────────────────────────────────────────────────
+// NexusMarket — full database schema (per Plan A.md)
+// 32 models covering: auth, marketplace, shop, rental, payments,
+// automation, support, moderation, analytics, gamification.
+// ─────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  SELLER
+  MODERATOR
+  ADMIN
+  SUPERADMIN
+}
+
+enum SellerTier {
+  NONE
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum AccountStatus {
+  ACTIVE
+  MUTED
+  BANNED
+  PENDING_VERIFICATION
+}
+
+enum Currency {
+  RUB
+  USD
+  EUR
+  UAH
+}
+
+enum Platform {
+  PC
+  PLAYSTATION
+  XBOX
+  MOBILE
+  NINTENDO
+  CROSS_PLATFORM
+}
+
+enum ListingType {
+  ACCOUNT
+  KEY
+  SERVICE
+  ITEM
+  CURRENCY
+  BOOST
+  RENTAL
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  PAUSED
+  SOLD_OUT
+  REJECTED
+  ARCHIVED
+}
+
+enum DeliveryMode {
+  AUTO
+  MANUAL
+  SCHEDULED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERING
+  DELIVERED
+  COMPLETED
+  DISPUTED
+  REFUNDED
+  CANCELLED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  PURCHASE
+  SALE
+  REFUND
+  ESCROW_HOLD
+  ESCROW_RELEASE
+  COMMISSION
+  REFERRAL_PAYOUT
+  PROMO_BONUS
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentProvider {
+  YOOKASSA
+  FREEKASSA
+  CRYPTOCLOUD
+  STRIPE
+  INTERNAL_BALANCE
+  REFERRAL
+}
+
+enum WithdrawalMethod {
+  CARD
+  CRYPTO
+  YOOMONEY
+  SBP
+}
+
+enum WithdrawalStatus {
+  REQUESTED
+  APPROVED
+  PROCESSING
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING_USER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum TicketCategory {
+  GENERAL
+  ORDER_DISPUTE
+  PAYMENT
+  TECHNICAL
+  ACCOUNT
+  SECURITY
+  PARTNERSHIP
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+  TELEGRAM
+  DISCORD
+  SMS
+}
+
+enum NotificationType {
+  ORDER_NEW
+  ORDER_UPDATED
+  CHAT_MESSAGE
+  DISPUTE_OPENED
+  PAYOUT_COMPLETED
+  REVIEW_RECEIVED
+  RENTAL_EXPIRING
+  ACCOUNT_LOGIN
+  PROMO
+  SYSTEM
+}
+
+enum BotPlatform {
+  FUNPAY
+  STARVELL
+  PLAYEROK
+  TELEGRAM
+  DISCORD
+  CUSTOM
+}
+
+enum BotStatus {
+  IDLE
+  RUNNING
+  PAUSED
+  ERROR
+  STOPPED
+}
+
+enum BotLogLevel {
+  DEBUG
+  INFO
+  WARN
+  ERROR
+}
+
+enum RentalStatus {
+  PENDING
+  ACTIVE
+  PAUSED
+  EXPIRED
+  CANCELLED
+}
+
+enum PromoKind {
+  PERCENT
+  FIXED
+  BONUS_BALANCE
+}
+
+enum ReportTarget {
+  LISTING
+  USER
+  REVIEW
+  MESSAGE
+  ORDER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum AuthProvider {
+  PASSWORD
+  GOOGLE
+  DISCORD
+  STEAM
+  VK
+  TELEGRAM
+}
+
+// ─── CORE: USERS, SESSIONS, AUTH ─────────────────────────────────────
+
+model User {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  email           String   @unique
+  emailVerifiedAt DateTime?
+  phone           String?  @unique
+  phoneVerifiedAt DateTime?
+
+  passwordHash    String?
+  authProvider    AuthProvider @default(PASSWORD)
+
+  username    String   @unique
+  displayName String?
+  avatarUrl   String?
+  bannerUrl   String?
+  bio         String?
+
+  role        UserRole       @default(USER)
+  status      AccountStatus  @default(PENDING_VERIFICATION)
+  sellerTier  SellerTier     @default(NONE)
+
+  // 2FA
+  totpSecret      String?
+  totpEnabledAt   DateTime?
+
+  // Wallet (real money in escrow / available)
+  balance         Decimal  @default(0) @db.Decimal(18, 2)
+  balanceFrozen   Decimal  @default(0) @db.Decimal(18, 2)
+  preferredCurrency Currency @default(RUB)
+
+  // Gamification
+  experience      Int      @default(0)
+  level           Int      @default(1)
+
+  // Privacy / settings (denormalized for fast read)
+  isPrivate       Boolean  @default(false)
+  customSlug      String?  @unique
+  language        String   @default("ru")
+
+  // KYC
+  kycVerifiedAt   DateTime?
+
+  // Relations
+  sessions          Session[]
+  apiKeys           ApiKey[]
+  oauthAccounts     OAuthAccount[]
+
+  listings          Listing[]
+  ordersAsBuyer     Order[]    @relation("OrderBuyer")
+  ordersAsSeller    Order[]    @relation("OrderSeller")
+
+  transactions      Transaction[]
+  withdrawals       Withdrawal[]
+
+  reviewsWritten    Review[]   @relation("ReviewAuthor")
+  reviewsReceived   Review[]   @relation("ReviewSubject")
+
+  ticketsCreated    Ticket[]   @relation("TicketAuthor")
+  ticketMessages    TicketMessage[]
+  ticketsAssigned   Ticket[]   @relation("TicketAssignee")
+
+  notifications     Notification[]
+  notificationPrefs NotificationPreference?
+
+  bots              Bot[]
+  integrations      Integration[]
+
+  rentals           Rental[]
+
+  promoUsages       PromoUsage[]
+
+  reportsFiled      Report[]   @relation("ReportReporter")
+
+  auditLogs         AuditLog[] @relation("AuditActor")
+
+  webhooks          Webhook[]
+
+  achievements      UserAchievement[]
+
+  referredBy        Referral?  @relation("ReferralRefereeOnce")
+  referralsSent     Referral[] @relation("ReferralReferrer")
+
+  @@index([sellerTier, status])
+  @@index([role])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Refresh token rotation
+  refreshTokenHash String   @unique
+  rotatedFromId    String?
+
+  ip           String?
+  userAgent    String?
+  deviceLabel  String?
+  // device fingerprint for risk scoring
+  fingerprint  String?
+
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  revokedAt    DateTime?
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model OAuthAccount {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  provider     AuthProvider
+  providerUserId String
+  accessToken  String?
+  refreshToken String?
+  expiresAt    DateTime?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  label       String
+  // Only the prefix is stored visibly; keyHash is for verification
+  prefix      String   @unique
+  keyHash     String
+  scopes      String[]
+
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+
+  rateLimitPerMinute Int @default(120)
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId, revokedAt])
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referrer    User     @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+
+  refereeId   String   @unique
+  referee     User     @relation("ReferralRefereeOnce", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  code        String
+  bonusPaid   Decimal  @default(0) @db.Decimal(18, 2)
+  totalEarned Decimal  @default(0) @db.Decimal(18, 2)
+
+  createdAt   DateTime @default(now())
+
+  @@index([referrerId])
+}
+
+// ─── CATALOG: GAMES, CATEGORIES, LISTINGS ───────────────────────────
+
+model Game {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  publisher   String?
+  coverUrl    String?
+  iconUrl     String?
+  platforms   Platform[]
+  popularity  Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  listings    Listing[]
+  rentalUnits RentalUnit[]
+
+  @@index([popularity])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  parentId    String?
+  parent      Category?   @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children    Category[]  @relation("CategoryTree")
+  iconName    String?
+  position    Int        @default(0)
+
+  listings    Listing[]
+
+  @@index([parentId, position])
+}
+
+model Listing {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  sellerId      String
+  seller        User          @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  gameId        String?
+  game          Game?         @relation(fields: [gameId], references: [id], onDelete: SetNull)
+
+  categoryId    String?
+  category      Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  type          ListingType
+  status        ListingStatus @default(DRAFT)
+
+  title         String
+  slug          String        @unique
+  description   String?
+  tags          String[]
+  serverName    String?       // for MMORPG listings
+  platform      Platform?
+
+  // Pricing
+  currency      Currency      @default(RUB)
+  price         Decimal       @db.Decimal(18, 2)
+  compareAtPrice Decimal?     @db.Decimal(18, 2)
+  // Bulk discount: { qty: percent }
+  bulkDiscount  Json?
+
+  stockQty      Int           @default(1)
+  // null = unlimited (recurring services)
+  unlimited     Boolean       @default(false)
+
+  deliveryMode  DeliveryMode  @default(MANUAL)
+  // for AUTO delivery: list of unused codes/keys
+  deliveryPayload Json?
+
+  // Boost / premium placement
+  boostedUntil  DateTime?
+
+  // SEO / OG
+  metaTitle       String?
+  metaDescription String?
+
+  // Stats (denormalized for cheap reads)
+  viewCount     Int           @default(0)
+  salesCount    Int           @default(0)
+  reviewCount   Int           @default(0)
+  ratingAvg     Float         @default(0)
+
+  images        ListingImage[]
+  orderItems    OrderItem[]
+  reviews       Review[]
+  reports       Report[]      @relation("ListingReports")
+
+  @@index([sellerId, status])
+  @@index([gameId, status, ratingAvg])
+  @@index([categoryId, status])
+  @@index([status, boostedUntil])
+}
+
+model ListingImage {
+  id         String   @id @default(cuid())
+  listingId  String
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  url        String
+  width      Int?
+  height     Int?
+  position   Int      @default(0)
+  isCover    Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+
+  @@index([listingId, position])
+}
+
+// ─── COMMERCE: ORDERS, ESCROW, PAYMENTS ─────────────────────────────
+
+model Order {
+  id            String      @id @default(cuid())
+  number        String      @unique // human-friendly number e.g. NM-2026-000123
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  buyerId       String
+  buyer         User        @relation("OrderBuyer", fields: [buyerId], references: [id], onDelete: Restrict)
+
+  sellerId      String
+  seller        User        @relation("OrderSeller", fields: [sellerId], references: [id], onDelete: Restrict)
+
+  status        OrderStatus @default(PENDING)
+
+  currency      Currency    @default(RUB)
+  subtotal      Decimal     @db.Decimal(18, 2)
+  commission    Decimal     @default(0) @db.Decimal(18, 2)
+  discount      Decimal     @default(0) @db.Decimal(18, 2)
+  total         Decimal     @db.Decimal(18, 2)
+
+  // Promo applied
+  promoId       String?
+  promo         Promo?      @relation(fields: [promoId], references: [id], onDelete: SetNull)
+
+  // Lifecycle timestamps
+  paidAt        DateTime?
+  deliveredAt   DateTime?
+  confirmedAt   DateTime?
+  disputedAt    DateTime?
+  cancelledAt   DateTime?
+  refundedAt    DateTime?
+
+  // Escrow auto-confirm at this time if buyer doesn't act (default 48h)
+  autoConfirmAt DateTime?
+
+  buyerNote     String?
+  sellerNote    String?
+
+  items         OrderItem[]
+  transactions  Transaction[]
+  reviews       Review[]
+  invoiceUrl    String?
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+  @@index([status, autoConfirmAt])
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  listingId   String
+  listing     Listing @relation(fields: [listingId], references: [id], onDelete: Restrict)
+
+  // Snapshot of listing at purchase time (immutable)
+  titleSnapshot String
+  priceSnapshot Decimal @db.Decimal(18, 2)
+  currency      Currency
+
+  quantity     Int     @default(1)
+
+  // Auto-delivery payload delivered to buyer
+  deliveredPayload Json?
+
+  @@index([orderId])
+  @@index([listingId])
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  userId      String
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orderId     String?
+  order       Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+
+  currency    Currency          @default(RUB)
+  amount      Decimal           @db.Decimal(18, 2)
+
+  provider    PaymentProvider?
+  providerTxnId String?         // external id at the gateway
+
+  description String?
+  metadata    Json?
+
+  failureReason String?
+
+  @@index([userId, type, status])
+  @@index([orderId])
+  @@index([provider, providerTxnId])
+}
+
+model Withdrawal {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  method      WithdrawalMethod
+  status      WithdrawalStatus @default(REQUESTED)
+
+  currency    Currency         @default(RUB)
+  amount      Decimal          @db.Decimal(18, 2)
+  fee         Decimal          @default(0) @db.Decimal(18, 2)
+
+  // Destination details (encrypted in app layer; raw JSON here)
+  payoutDetails Json
+
+  reviewedById  String?
+  reviewedAt    DateTime?
+  rejectedReason String?
+
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([status, createdAt])
+}
+
+// ─── REVIEWS ────────────────────────────────────────────────────────
+
+model Review {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  authorId    String
+  author      User     @relation("ReviewAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  subjectId   String
+  subject     User     @relation("ReviewSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  orderId     String?
+  order       Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  listingId   String?
+  listing     Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  rating      Int       // 1..5
+  body        String?
+  imageUrls   String[]
+
+  sellerReply       String?
+  sellerRepliedAt   DateTime?
+
+  isPublished Boolean   @default(true)
+  reports     Report[]  @relation("ReviewReports")
+
+  @@unique([authorId, orderId])
+  @@index([subjectId, rating])
+  @@index([listingId])
+}
+
+// ─── SUPPORT ────────────────────────────────────────────────────────
+
+model Ticket {
+  id          String         @id @default(cuid())
+  number      String         @unique // T-2026-000123
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  authorId    String
+  author      User           @relation("TicketAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  assignedToId String?
+  assignedTo   User?         @relation("TicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  category    TicketCategory @default(GENERAL)
+  priority    TicketPriority @default(NORMAL)
+  status      TicketStatus   @default(OPEN)
+  subject     String
+
+  // SLA target — when a first response should be made
+  firstResponseDueAt DateTime?
+  firstResponseAt    DateTime?
+  closedAt           DateTime?
+
+  satisfactionScore Int? // 1..5 (CSAT)
+
+  messages    TicketMessage[]
+
+  @@index([authorId, status])
+  @@index([assignedToId, status])
+  @@index([status, priority])
+}
+
+model TicketMessage {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  ticketId    String
+  ticket      Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  body        String
+  attachments Json?
+  // Internal note (visible to mods only)
+  isInternal  Boolean  @default(false)
+
+  @@index([ticketId, createdAt])
+}
+
+// ─── NOTIFICATIONS ──────────────────────────────────────────────────
+
+model Notification {
+  id          String              @id @default(cuid())
+  createdAt   DateTime            @default(now())
+
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        NotificationType
+  channel     NotificationChannel @default(IN_APP)
+
+  title       String
+  body        String?
+  payload     Json?
+  // Deep-link target inside the app
+  targetUrl   String?
+
+  readAt      DateTime?
+  deliveredAt DateTime?
+
+  @@index([userId, readAt])
+  @@index([userId, type])
+}
+
+model NotificationPreference {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // map of NotificationType => list of channels
+  channels  Json
+  // Quiet hours: { startHour: 22, endHour: 7, tz: "Europe/Moscow" }
+  quietHours Json?
+  doNotDisturb Boolean @default(false)
+}
+
+// ─── AUTOMATION: BOTS, INTEGRATIONS, WEBHOOKS ───────────────────────
+
+model Integration {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  platform    BotPlatform
+  label       String
+  // Encrypted credentials; raw JSON here for the schema
+  credentials Json
+  // Optional outbound proxy
+  proxyUrl    String?
+
+  isActive    Boolean     @default(true)
+  lastSyncAt  DateTime?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  bots        Bot[]
+
+  @@unique([userId, platform, label])
+  @@index([userId, isActive])
+}
+
+model Bot {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  integrationId String?
+  integration   Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+
+  name        String
+  kind        String       // e.g. "auto-bump", "auto-reply", "price-sync"
+  status      BotStatus    @default(IDLE)
+  // serialized config (cron, templates, thresholds...)
+  config      Json
+  // optional cron schedule
+  schedule    String?
+
+  lastRunAt   DateTime?
+  lastError   String?
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  logs        BotLog[]
+
+  @@index([userId, status])
+}
+
+model BotLog {
+  id          String      @id @default(cuid())
+  botId       String
+  bot         Bot         @relation(fields: [botId], references: [id], onDelete: Cascade)
+
+  level       BotLogLevel @default(INFO)
+  message     String
+  context     Json?
+  createdAt   DateTime    @default(now())
+
+  @@index([botId, createdAt])
+}
+
+model Webhook {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  url         String
+  secret      String     // for HMAC signing
+  events      String[]
+  isActive    Boolean    @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deliveries  WebhookDelivery[]
+
+  @@index([userId, isActive])
+}
+
+model WebhookDelivery {
+  id          String                @id @default(cuid())
+  webhookId   String
+  webhook     Webhook               @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  event       String
+  payload     Json
+  status      WebhookDeliveryStatus @default(PENDING)
+  attempts    Int                   @default(0)
+  responseStatus Int?
+  responseBody   String?
+  nextRetryAt    DateTime?
+
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  @@index([webhookId, status])
+  @@index([status, nextRetryAt])
+}
+
+// ─── RENTAL ─────────────────────────────────────────────────────────
+
+model RentalUnit {
+  id          String   @id @default(cuid())
+  gameId      String
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  label       String
+  // Encrypted credentials in app layer
+  credentials Json
+  isShared    Boolean  @default(false)
+
+  // Plans: { "1h": price, "1d": price, "7d": price, "30d": price }
+  plans       Json
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rentals     Rental[]
+
+  @@index([gameId, isActive])
+}
+
+model Rental {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  unitId        String
+  unit          RentalUnit   @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  status        RentalStatus @default(PENDING)
+  planLabel     String       // e.g. "1d", "7d"
+  startsAt      DateTime
+  endsAt        DateTime
+  autoRenew     Boolean      @default(false)
+
+  totalCost     Decimal      @db.Decimal(18, 2)
+  currency      Currency     @default(RUB)
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  sessions      RentalSession[]
+
+  @@index([userId, status])
+  @@index([status, endsAt])
+}
+
+model RentalSession {
+  id          String   @id @default(cuid())
+  rentalId    String
+  rental      Rental   @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  ip          String?
+  userAgent   String?
+
+  @@index([rentalId, startedAt])
+}
+
+// ─── PROMO / PRICING ────────────────────────────────────────────────
+
+model Promo {
+  id          String     @id @default(cuid())
+  code        String     @unique
+  kind        PromoKind  @default(PERCENT)
+  value       Decimal    @db.Decimal(18, 2)
+  currency    Currency?
+  // Optional restrictions
+  minOrderTotal Decimal? @db.Decimal(18, 2)
+  maxRedemptions Int?
+  redemptions    Int     @default(0)
+
+  startsAt    DateTime?
+  endsAt      DateTime?
+  isActive    Boolean    @default(true)
+
+  createdAt   DateTime   @default(now())
+
+  usages      PromoUsage[]
+  orders      Order[]
+
+  @@index([isActive, endsAt])
+}
+
+model PromoUsage {
+  id        String   @id @default(cuid())
+  promoId   String
+  promo     Promo    @relation(fields: [promoId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orderId   String?
+  amountSaved Decimal @db.Decimal(18, 2)
+
+  createdAt DateTime @default(now())
+
+  @@unique([promoId, userId, orderId])
+  @@index([userId])
+}
+
+// ─── MODERATION & ABUSE ─────────────────────────────────────────────
+
+model Report {
+  id          String        @id @default(cuid())
+  reporterId  String
+  reporter    User          @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  target      ReportTarget
+  // exactly one of these is non-null
+  listingId   String?
+  listing     Listing?      @relation("ListingReports", fields: [listingId], references: [id], onDelete: SetNull)
+
+  reviewId    String?
+  review      Review?       @relation("ReviewReports", fields: [reviewId], references: [id], onDelete: SetNull)
+
+  reason      String
+  details     String?
+  status      ReportStatus  @default(PENDING)
+
+  resolvedAt  DateTime?
+  resolutionNote String?
+
+  createdAt   DateTime      @default(now())
+
+  @@index([target, status])
+  @@index([reporterId])
+}
+
+// ─── ANALYTICS ──────────────────────────────────────────────────────
+
+model AnalyticsEvent {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  // Anonymous or identified
+  userId      String?
+  sessionId   String?
+
+  name        String   // e.g. "listing.viewed", "checkout.started"
+  properties  Json?
+
+  // Common dimensions for fast aggregation
+  source      String?  // utm_source
+  medium      String?  // utm_medium
+  campaign    String?
+  country     String?
+  device      String?
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+}
+
+model PageView {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  userId      String?
+  sessionId   String?
+  path        String
+  referrer    String?
+  userAgent   String?
+  country     String?
+  durationMs  Int?
+
+  @@index([path, createdAt])
+}
+
+// ─── AUDIT LOG ──────────────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  actorId     String?
+  actor       User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  action      String   // e.g. "user.banned", "listing.approved"
+  targetType  String?
+  targetId    String?
+  ip          String?
+  userAgent   String?
+  diff        Json?
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([action, createdAt])
+}
+
+// ─── GAMIFICATION ───────────────────────────────────────────────────
+
+model Achievement {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  iconName    String?
+  // points awarded on unlock
+  reward      Int      @default(0)
+  // criteria for auto-grant (optional, evaluated by jobs)
+  criteria    Json?
+  isHidden    Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+
+  unlocks     UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  unlockedAt    DateTime @default(now())
+  progress      Int      @default(100) // 0..100 for incremental ones
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
