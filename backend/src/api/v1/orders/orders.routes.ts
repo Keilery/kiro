@@ -1,14 +1,134 @@
-import { buildStubRouter } from "../_stub.js";
+import { Router } from "express";
+import { UserRole } from "@prisma/client";
+import { asyncHandler } from "../../../utils/asyncHandler.js";
+import { validate } from "../../../utils/validate.js";
+import { requireAuth, requireRole } from "../../../middleware/auth.js";
+import { rateLimit } from "../../../middleware/rateLimit.js";
+import { AppError } from "../../../utils/errors.js";
+import {
+  OrderCreateSchema,
+  OrderListQuerySchema,
+  DisputeOpenSchema,
+  DisputeResolveSchema,
+  OrderIdParam,
+} from "./orders.dto.js";
+import * as svc from "./orders.service.js";
 
-export const ordersRouter = buildStubRouter("orders", [
-  { method: "get",   path: "/",                      description: "List orders for the current user (buyer+seller views)",        plannedIn: "PR#3", requiresAuth: true },
-  { method: "post",  path: "/",                      description: "Create an order (initiates escrow + payment intent)",          plannedIn: "PR#3", requiresAuth: true },
-  { method: "get",   path: "/:id",                   description: "Order details with items, transactions, dispute thread",       plannedIn: "PR#3", requiresAuth: true },
-  { method: "patch", path: "/:id/confirm",           description: "Buyer confirms receipt → escrow released to seller",           plannedIn: "PR#3", requiresAuth: true },
-  { method: "patch", path: "/:id/cancel",            description: "Cancel an unpaid order",                                       plannedIn: "PR#3", requiresAuth: true },
-  { method: "post",  path: "/:id/dispute",           description: "Open a dispute — moves status to DISPUTED",                    plannedIn: "PR#3", requiresAuth: true },
-  { method: "post",  path: "/:id/dispute/resolve",   description: "Moderator resolves a dispute (refund / release / split)",      plannedIn: "PR#3", requiresAuth: true, minRole: "MODERATOR" },
-  { method: "post",  path: "/:id/messages",          description: "Send a message in the buyer↔seller chat for this order",       plannedIn: "PR#4 + PR#11", requiresAuth: true },
-  { method: "get",   path: "/:id/messages",          description: "List messages in the buyer↔seller chat",                       plannedIn: "PR#4 + PR#11", requiresAuth: true },
-  { method: "get",   path: "/:id/invoice",           description: "Download invoice as PDF",                                      plannedIn: "PR#3", requiresAuth: true },
-]);
+/**
+ * Orders HTTP layer.
+ *
+ * Auth model:
+ *   - All endpoints require auth (no public order surface).
+ *   - The service layer enforces buyer-or-seller ownership on each
+ *     order; the dispute-resolve endpoint additionally requires
+ *     MODERATOR+.
+ *
+ * Rate limits:
+ *   - Order creation is the most expensive call (locks listing row,
+ *     runs a multi-step transaction). Tighter limit so we shed load
+ *     under bot-driven scraping.
+ *   - State transitions stay generous to avoid frustrating real users
+ *     who tap "confirm" twice on a slow connection.
+ */
+
+const router = Router();
+
+const checkoutLimiter = rateLimit({ windowMs: 60_000, max: 20, key: "order-create" });
+const transitionLimiter = rateLimit({ windowMs: 60_000, max: 60, key: "order-transition" });
+
+router.get("/", requireAuth, validate({ query: OrderListQuerySchema }), asyncHandler(async (req, res) => {
+  if (!req.user) throw AppError.unauthorized();
+  const page = await svc.listOrders(req.user.sub, req.query as never);
+  res.json(page);
+}));
+
+router.post(
+  "/",
+  requireAuth,
+  checkoutLimiter,
+  validate({ body: OrderCreateSchema }),
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw AppError.unauthorized();
+    const order = await svc.createOrder(req.user.sub, req.body);
+    res.status(201).json({ order });
+  }),
+);
+
+router.get(
+  "/:id",
+  requireAuth,
+  validate({ params: OrderIdParam }),
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw AppError.unauthorized();
+    const isMod =
+      req.user.role === UserRole.MODERATOR ||
+      req.user.role === UserRole.ADMIN ||
+      req.user.role === UserRole.SUPERADMIN;
+    const order = await svc.getOrder(req.user.sub, req.params.id, isMod);
+    res.json({ order });
+  }),
+);
+
+router.patch(
+  "/:id/deliver",
+  requireAuth,
+  requireRole(UserRole.SELLER),
+  transitionLimiter,
+  validate({ params: OrderIdParam }),
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw AppError.unauthorized();
+    const order = await svc.markDelivered(req.user.sub, req.params.id);
+    res.json({ order });
+  }),
+);
+
+router.patch(
+  "/:id/confirm",
+  requireAuth,
+  transitionLimiter,
+  validate({ params: OrderIdParam }),
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw AppError.unauthorized();
+    const order = await svc.confirmOrder(req.user.sub, req.params.id);
+    res.json({ order });
+  }),
+);
+
+router.patch(
+  "/:id/cancel",
+  requireAuth,
+  transitionLimiter,
+  validate({ params: OrderIdParam }),
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw AppError.unauthorized();
+    const order = await svc.cancelOrder(req.user.sub, req.params.id);
+    res.json({ order });
+  }),
+);
+
+router.post(
+  "/:id/dispute",
+  requireAuth,
+  transitionLimiter,
+  validate({ params: OrderIdParam, body: DisputeOpenSchema }),
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw AppError.unauthorized();
+    const order = await svc.openDispute(req.user.sub, req.params.id, req.body);
+    res.json({ order });
+  }),
+);
+
+router.post(
+  "/:id/dispute/resolve",
+  requireAuth,
+  requireRole(UserRole.MODERATOR),
+  transitionLimiter,
+  validate({ params: OrderIdParam, body: DisputeResolveSchema }),
+  asyncHandler(async (req, res) => {
+    if (!req.user) throw AppError.unauthorized();
+    const order = await svc.resolveDispute(req.user.sub, req.params.id, req.body);
+    res.json({ order });
+  }),
+);
+
+export { router as ordersRouter };
