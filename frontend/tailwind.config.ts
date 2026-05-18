@@ -5,22 +5,23 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // iOS 26 inspired palette (per Plan A)
+        // iOS 26 inspired palette — darker iteration of Plan A.
+        // Numeric stops mirror the CSS vars so utilities and tokens stay in sync.
         ink: {
           DEFAULT: "#000000",
-          950: "#050507",
-          900: "#0A0A0C",
-          800: "#111114"
+          950: "#030305",
+          900: "#06060A",
+          800: "#0E0E12"
         },
         chrome: {
           50: "#FFFFFF",
           200: "rgba(255,255,255,0.85)",
-          400: "rgba(255,255,255,0.55)",
-          500: "#8E8E93",
-          600: "rgba(255,255,255,0.30)",
-          700: "rgba(255,255,255,0.12)",
-          800: "rgba(255,255,255,0.08)",
-          900: "rgba(255,255,255,0.05)"
+          400: "rgba(255,255,255,0.45)",
+          500: "#6E6E73",
+          600: "rgba(255,255,255,0.22)",
+          700: "rgba(255,255,255,0.09)",
+          800: "rgba(255,255,255,0.05)",
+          900: "rgba(255,255,255,0.035)"
         },
         signal: {
           success: "#30D158",
