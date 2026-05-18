@@ -14,13 +14,18 @@
      ──────────────────────────────────────────────────────────── */
 
   :root {
-    --bg: #050507;
+    /*
+     * Darker theme — matches frontend/globals.css after PR#4. The
+     * standalone preview must stay visually identical so reviewers
+     * who can't run `npm install` see exactly what shipped.
+     */
+    --bg: #030305;
     --fg: #fff;
-    --muted: #8E8E93;
-    --line: rgba(255,255,255,0.05);
-    --border: rgba(255,255,255,0.12);
-    --glass: rgba(255,255,255,0.06);
-    --glass-strong: rgba(255,255,255,0.10);
+    --muted: #6E6E73;
+    --line: rgba(255,255,255,0.035);
+    --border: rgba(255,255,255,0.09);
+    --glass: rgba(255,255,255,0.04);
+    --glass-strong: rgba(255,255,255,0.075);
     --success: #30D158;
     --warning: #FF9F0A;
     --error:   #FF453A;
@@ -49,11 +54,16 @@
   /* ── Atmosphere ──────────────────────────────────────────────── */
 
   .stripes {
+    /*
+     * Plan A signature 3px / 45deg lines — opacity now 0.035 (was
+     * 0.05) so the room reads darker and the planet's specular
+     * highlight wins focus. Kept under raking light from the planet.
+     */
     position: absolute; inset: 0; pointer-events: none;
     background-image: repeating-linear-gradient(
       45deg,
-      rgba(255,255,255,0.05) 0,
-      rgba(255,255,255,0.05) 3px,
+      rgba(255,255,255,0.035) 0,
+      rgba(255,255,255,0.035) 3px,
       transparent 3px,
       transparent 24px
     );
@@ -64,8 +74,8 @@
     position: absolute; inset: 0; pointer-events: none;
     background-image: repeating-linear-gradient(
       45deg,
-      rgba(255,255,255,0.04) 0,
-      rgba(255,255,255,0.04) 1px,
+      rgba(255,255,255,0.025) 0,
+      rgba(255,255,255,0.025) 1px,
       transparent 1px,
       transparent 12px
     );
@@ -75,21 +85,32 @@
     to   { background-position: 120px 120px; }
   }
   .aurora {
+    /*
+     * Tone-down pass: ~60% of previous opacities and the green
+     * hotspot moved to bottom-right (80% 95%) so the planet at the
+     * focal centre keeps its specular monopoly. blur(48px) — slight
+     * push for softer edges on the darker bg.
+     */
     position: absolute; inset: 0; pointer-events: none;
     background:
-      radial-gradient(60% 50% at 20% 20%, rgba(120,180,255,0.10), transparent 60%),
-      radial-gradient(50% 40% at 85% 30%, rgba(255,90,130,0.08),  transparent 60%),
-      radial-gradient(60% 50% at 50% 90%, rgba(80,230,170,0.07),  transparent 60%);
-    filter: blur(40px);
-    animation: aurora 14s ease-in-out infinite;
+      radial-gradient(55% 45% at 20% 20%, rgba(120,180,255,0.06), transparent 65%),
+      radial-gradient(45% 35% at 85% 30%, rgba(255,90,130,0.05),  transparent 65%),
+      radial-gradient(55% 45% at 80% 95%, rgba(80,230,170,0.04),  transparent 65%);
+    filter: blur(48px);
+    animation: aurora 16s ease-in-out infinite;
   }
   @keyframes aurora {
     0%, 100% { transform: translate3d(0,0,0) scale(1); }
-    50%      { transform: translate3d(2%, -1%, 0) scale(1.08); }
+    50%      { transform: translate3d(2%, -1%, 0) scale(1.06); }
   }
   .vignette {
+    /*
+     * Vignette pulled darker (0.85, was 0.7) and the inner clear
+     * region tightened from 30% → 24% so corners go properly black.
+     * The planet sits in the bright pocket; everything else falls off.
+     */
     position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.7) 90%);
+    background: radial-gradient(ellipse at 50% 42%, transparent 24%, rgba(0,0,0,0.85) 90%);
   }
   .grain {
     position: fixed; inset: 0; pointer-events: none; z-index: 60;
@@ -101,18 +122,19 @@
 
   .glass {
     background: var(--glass);
-    backdrop-filter: blur(40px) saturate(140%);
-    -webkit-backdrop-filter: blur(40px) saturate(140%);
+    backdrop-filter: blur(40px) saturate(135%);
+    -webkit-backdrop-filter: blur(40px) saturate(135%);
     border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(255,255,255,0.03);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(255,255,255,0.02);
     border-radius: var(--radius);
   }
   .glass-strong {
     background: var(--glass-strong);
-    backdrop-filter: blur(60px) saturate(160%);
-    -webkit-backdrop-filter: blur(60px) saturate(160%);
+    backdrop-filter: blur(60px) saturate(150%);
+    -webkit-backdrop-filter: blur(60px) saturate(150%);
     border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(255,255,255,0.04), 0 30px 80px -20px rgba(0,0,0,0.8);
+    /* Deeper drop shadow so cards keep their lift against the darker bg. */
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(255,255,255,0.03), 0 40px 100px -24px rgba(0,0,0,0.92);
     border-radius: var(--radius);
   }
 
@@ -209,10 +231,10 @@
     font-size: clamp(48px, 9vw, 128px);
     max-width: 1100px;
   }
-  h1.headline .muted { color: rgba(255,255,255,0.55); }
+  h1.headline .muted { color: rgba(255,255,255,0.62); }
 
   p.lede {
-    margin: 0; max-width: 640px; color: rgba(255,255,255,0.6);
+    margin: 0; max-width: 640px; color: rgba(255,255,255,0.66);
     font-size: 17px; line-height: 1.55;
   }
 
@@ -240,56 +262,150 @@
   .magnet:hover .shimmer { transform: translateX(100%); }
   .magnet:active { transform: scale(0.97) translateY(1px); }
 
-  /* ── Hero Orb ────────────────────────────────────────────────── */
+  /* ── Hero Planet ─────────────────────────────────────────────
+     Standalone mirror of components/hero/HeroPlanet.tsx — see that
+     file for the full rationale. Same 7-layer construction, same
+     keyframes; the only difference is the parallax tilt is wired
+     up in plain JS at the bottom of <body>.
+     ──────────────────────────────────────────────────────────── */
 
-  .orb {
+  .planet-stage {
+    --planet: clamp(280px, 42vmin, 560px);
     position: absolute; left: 50%; top: 50%;
-    width: min(640px, 90vw); height: min(640px, 90vw);
+    width: var(--planet); height: var(--planet);
     transform: translate(-50%, -50%);
+    /* 3D context for the inner tilt — children's rotateY/rotateX
+       reads as pseudo-3D rather than as a flat skew. */
+    perspective: 1200px;
+    transform-style: preserve-3d;
     pointer-events: none;
-    filter: blur(0.4px);
   }
-  .orb-core {
-    position: absolute; inset: 28%;
+
+  /* Atmosphere: soft halo larger than the planet, biased toward
+     the lit upper-left side. Renders behind everything else. */
+  .planet-atmosphere {
+    position: absolute; inset: -14%;
     border-radius: 999px;
-    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.45), rgba(255,255,255,0.05) 55%, transparent 70%);
+    background:
+      radial-gradient(circle at 32% 28%, rgba(150,200,255,0.22) 0%, rgba(150,200,255,0.10) 18%, rgba(150,200,255,0.03) 38%, transparent 60%),
+      radial-gradient(circle at 50% 50%, transparent 56%, rgba(120,170,230,0.08) 60%, transparent 78%);
+    filter: blur(8px);
+    will-change: transform;
+    transition: transform 220ms var(--ease-out-expo);
+  }
+
+  /* Sphere: clips everything inside via overflow + radial-gradient
+     base. Night-side tinted blue-grey so it isn't a black hole. */
+  .planet-shell {
+    position: absolute; inset: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #0a1320 0%, #060a13 70%, #030509 100%);
     box-shadow:
-      inset 0 1px 0 rgba(255,255,255,0.4),
-      inset 0 -40px 80px rgba(255,255,255,0.05),
-      0 0 80px rgba(255,255,255,0.06);
-    animation: coreIn 1.4s var(--ease-out-expo) both;
+      inset 0 0 0 1px rgba(255,255,255,0.06),
+      inset 0 -30px 80px rgba(0,0,0,0.55);
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform 220ms var(--ease-out-expo);
   }
-  @keyframes coreIn {
-    from { opacity: 0; transform: scale(0.6); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-  .orb-ring {
-    position: absolute; border-radius: 999px;
+
+  /* Surface bands: rotating conic gradient masked to a circle.
+     Wider than the shell so the conic seam is hidden offscreen. */
+  .planet-surface {
+    position: absolute; inset: -60% -60%;
+    background: conic-gradient(
+      from 0deg,
+      #1c3658 0deg, #2a4a72 28deg, #1a2c48 60deg, #2f5b8c 95deg,
+      #15243a 130deg, #28466e 170deg, #1a2c48 210deg, #2c5485 250deg,
+      #16263e 290deg, #1c3658 360deg
+    );
+    -webkit-mask: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.8) 75%, transparent 100%);
+            mask: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0.8) 75%, transparent 100%);
+    animation: planet-spin 64s linear infinite;
     will-change: transform;
   }
-  .ring-1 {
-    inset: 10%;
-    background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.12) 90deg, transparent 180deg, rgba(255,255,255,0.08) 270deg, transparent 360deg);
-    -webkit-mask: radial-gradient(closest-side, transparent 78%, black 79%, black 80%, transparent 81%);
-            mask: radial-gradient(closest-side, transparent 78%, black 79%, black 80%, transparent 81%);
-    animation: spin 36s linear infinite;
+
+  /* Cloud layer: counter-rotating, lighter colors, screen blend.
+     Period 38s desyncs from the surface (64s) so they never align. */
+  .planet-clouds {
+    position: absolute; inset: -55% -55%;
+    background: conic-gradient(
+      from 90deg,
+      rgba(255,255,255,0.16) 0deg, rgba(255,255,255,0.04) 40deg,
+      rgba(180,210,240,0.12) 90deg, rgba(255,255,255,0.02) 140deg,
+      rgba(220,235,255,0.10) 200deg, rgba(255,255,255,0.03) 260deg,
+      rgba(200,220,245,0.09) 320deg, rgba(255,255,255,0.16) 360deg
+    );
+    -webkit-mask: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 48%, rgba(0,0,0,0.6) 72%, transparent 96%);
+            mask: radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 48%, rgba(0,0,0,0.6) 72%, transparent 96%);
+    animation: planet-spin-reverse 38s linear infinite;
+    mix-blend-mode: screen;
+    opacity: 0.85;
+    will-change: transform;
   }
-  .ring-2 {
-    inset: 2%;
-    background: conic-gradient(from 90deg, transparent 0deg, rgba(48,209,88,0.18) 60deg, transparent 120deg, rgba(255,159,10,0.12) 220deg, transparent 280deg);
-    -webkit-mask: radial-gradient(closest-side, transparent 92%, black 93%, black 94%, transparent 95%);
-            mask: radial-gradient(closest-side, transparent 92%, black 93%, black 94%, transparent 95%);
-    animation: spin-rev 56s linear infinite;
+
+  /* Terminator: fixed directional shadow — sun is fixed, planet rotates. */
+  .planet-terminator {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 0%, transparent 35%, rgba(0,0,0,0.45) 65%, rgba(0,0,0,0.85) 100%);
+    border-radius: 999px;
+    pointer-events: none;
   }
-  .ring-3 {
-    inset: -5%;
-    background: conic-gradient(from 180deg, transparent, rgba(255,255,255,0.08), transparent);
-    -webkit-mask: radial-gradient(closest-side, transparent 96%, black 97%, black 98%, transparent 99%);
-            mask: radial-gradient(closest-side, transparent 96%, black 97%, black 98%, transparent 99%);
-    animation: spin 80s linear infinite;
+
+  /* Specular highlight on the lit hemisphere. */
+  .planet-specular {
+    position: absolute; inset: 0;
+    background: radial-gradient(circle at 28% 28%, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.12) 12%, transparent 30%);
+    border-radius: 999px;
+    mix-blend-mode: screen;
+    pointer-events: none;
   }
-  @keyframes spin     { to { transform: rotate(360deg); } }
-  @keyframes spin-rev { to { transform: rotate(-360deg); } }
+
+  /* Moon orbit. Wrapper rotates; moon is offset within. The orbit
+     ellipse is faked by squashing on Y — implies a tilted orbital plane. */
+  .planet-orbit {
+    position: absolute; inset: -30%;
+    border-radius: 999px;
+    transform: rotateZ(-12deg) scaleY(0.42);
+    animation: planet-spin 22s linear infinite;
+    will-change: transform;
+  }
+  .planet-moon {
+    position: absolute; top: 50%; right: -1%;
+    transform: translateY(-50%);
+    width: 6.2%; aspect-ratio: 1 / 1;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 30%, #d6dde5 0%, #8a93a1 55%, #2e333d 100%);
+    box-shadow: inset -2px -3px 4px rgba(0,0,0,0.5), 0 0 14px rgba(180,200,230,0.25);
+  }
+
+  /* Background stars — uniform twinkle (per-star phases would be
+     over-engineered for this much surface area). */
+  .planet-stars {
+    position: absolute; inset: -40%;
+    border-radius: 999px;
+    background:
+      radial-gradient(1px 1px at 18% 22%, rgba(255,255,255,0.65), transparent 100%),
+      radial-gradient(1px 1px at 72% 14%, rgba(255,255,255,0.50), transparent 100%),
+      radial-gradient(1px 1px at 88% 64%, rgba(200,220,255,0.55), transparent 100%),
+      radial-gradient(1px 1px at 12% 78%, rgba(255,255,255,0.45), transparent 100%),
+      radial-gradient(1px 1px at 44% 52%, rgba(255,255,255,0.35), transparent 100%),
+      radial-gradient(1px 1px at 60% 88%, rgba(220,230,255,0.50), transparent 100%),
+      radial-gradient(1px 1px at 30% 38%, rgba(255,255,255,0.30), transparent 100%),
+      radial-gradient(1px 1px at 80% 30%, rgba(255,255,255,0.45), transparent 100%);
+    opacity: 0.7;
+    animation: planet-twinkle 6s ease-in-out infinite;
+  }
+
+  @keyframes planet-spin         { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+  @keyframes planet-spin-reverse { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+  @keyframes planet-twinkle      { 0%,100% { opacity: 0.7; } 50% { opacity: 0.45; } }
+
+  /* prefers-reduced-motion is handled globally by the :root rule near
+     the bottom of this file; .planet-static gives JS an explicit hook
+     to freeze even if the parallax listener fires once before the
+     query is consulted. */
+  .planet-static, .planet-static * { animation: none !important; transform: none !important; }
 
   /* ── Live stats glass card ───────────────────────────────────── */
 
@@ -535,11 +651,23 @@
   <section class="hero" id="top">
     <div class="aurora"></div>
     <div class="stripes"></div>
-    <div class="orb" aria-hidden>
-      <div class="orb-ring ring-3"></div>
-      <div class="orb-ring ring-2"></div>
-      <div class="orb-ring ring-1"></div>
-      <div class="orb-core"></div>
+    <!--
+      Planet stage — see /* ── Hero Planet ── */ in <style> for the
+      full layer rationale. The order of children here matters:
+      atmosphere first (behind), then the spinning shell, then the
+      orbit + stars on top so the moon never gets eaten by the
+      cloud layer's screen-blend.
+    -->
+    <div class="planet-stage" id="planet" aria-hidden>
+      <div class="planet-atmosphere" data-tilt="outer"></div>
+      <div class="planet-shell" data-tilt="inner">
+        <div class="planet-surface"></div>
+        <div class="planet-clouds"></div>
+        <div class="planet-terminator"></div>
+        <div class="planet-specular"></div>
+      </div>
+      <div class="planet-orbit"><div class="planet-moon"></div></div>
+      <div class="planet-stars"></div>
     </div>
     <div class="vignette"></div>
 
@@ -741,6 +869,46 @@
       el.addEventListener('mouseleave', onLeave);
       tick();
     });
+
+    // ── Planet parallax tilt ──────────────────────────────────────
+    // Mirrors components/hero/HeroPlanet.tsx. Mouse position is
+    // normalized to viewport center → [-1, 1], then a sprung target
+    // drives rotateY/rotateX on two layers (atmosphere + shell).
+    // Inner shell tilts 1.6× the atmosphere so parallax depth reads.
+    // We respect prefers-reduced-motion: if set, the listener never
+    // attaches and .planet-static freezes the steady spins.
+    (() => {
+      const stage = document.getElementById('planet');
+      if (!stage) return;
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduceMotion) {
+        stage.classList.add('planet-static');
+        return;
+      }
+      const outer = stage.querySelector('[data-tilt="outer"]');
+      const inner = stage.querySelector('[data-tilt="inner"]');
+      // Targets and current values; updated per-frame by RAF.
+      let tx = 0, ty = 0, cx = 0, cy = 0;
+      const onMove = (e) => {
+        const w = window.innerWidth, h = window.innerHeight;
+        // [-1, 1] from viewport center
+        tx = Math.max(-1, Math.min(1, (e.clientX - w / 2) / (w / 2)));
+        ty = Math.max(-1, Math.min(1, (e.clientY - h / 2) / (h / 2)));
+      };
+      // Single RAF loop — cheaper and steadier than spring math here.
+      // 0.08 lerp factor gives ~half-second settle, matches the React
+      // spring config (stiffness 80, damping 18) closely enough that
+      // the two implementations look identical side-by-side.
+      const tick = () => {
+        cx = lerp(cx, tx, 0.08);
+        cy = lerp(cy, ty, 0.08);
+        if (outer) outer.style.transform = `rotateY(${cx * 6}deg) rotateX(${cy * -4}deg)`;
+        if (inner) inner.style.transform = `rotateY(${cx * 9.6}deg) rotateX(${cy * -6.4}deg)`;
+        requestAnimationFrame(tick);
+      };
+      window.addEventListener('mousemove', onMove, { passive: true });
+      tick();
+    })();
 
     // Marketplace cards data + staggered reveal
     const mpItems = [

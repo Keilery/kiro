@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Stripes } from "@/components/ui/Stripes";
 import { Badge } from "@/components/ui/Badge";
 import { GlassPanel } from "@/components/ui/GlassPanel";
-import { HeroOrb } from "./HeroOrb";
+import { HeroPlanet } from "./HeroPlanet";
 import { MagneticCTA } from "./MagneticCTA";
 import { ArrowUpRight, Sparkles, Zap } from "lucide-react";
 
@@ -19,6 +19,12 @@ import { ArrowUpRight, Sparkles, Zap } from "lucide-react";
  *  - impeccable: ease-out-expo curves, no gradient text, hierarchy via weight+scale
  *  - frontend-design: bold direction, atmospheric layers, distinctive typography
  *  - Plan A: black background + 45deg stripes opacity 0.05 + Liquid Glass + 22px radii
+ *
+ * Update (PR#4): the orb was replaced by HeroPlanet — a denser focal
+ * shape with surface bands, atmosphere and an orbiting moon. The
+ * background was deepened to true-black, so the vignette and aurora
+ * intensities are tuned down here to match (otherwise the planet
+ * loses contrast against the rest of the room).
  */
 
 const stagger = {
@@ -43,30 +49,42 @@ export function Hero() {
 
   return (
     <section className="relative isolate flex min-h-[100dvh] w-full items-center overflow-hidden">
-      {/* Layer 1: deep background */}
-      <div className="absolute inset-0 bg-ink-950" />
-      {/* Layer 2: aurora gradient mesh */}
+      {/* Layer 1: deep background — true black per the darker theme. */}
+      <div className="absolute inset-0 bg-ink" />
+      {/*
+        Layer 2: aurora gradient mesh.
+        Now driven by CSS `aurora` token (already toned down ~60% in
+        globals.css). The drift was previously a transform-array
+        animation; we keep the same period but rely on the .aurora
+        class's lower-intensity gradients so it doesn't compete with
+        the planet's specular highlight.
+      */}
       <motion.div
         aria-hidden
         className="absolute inset-0 aurora"
         animate={
           reduced
             ? undefined
-            : { transform: ["translate3d(0,0,0) scale(1)", "translate3d(2%,-1%,0) scale(1.08)", "translate3d(0,0,0) scale(1)"] }
+            : { transform: ["translate3d(0,0,0) scale(1)", "translate3d(2%,-1%,0) scale(1.06)", "translate3d(0,0,0) scale(1)"] }
         }
-        transition={{ duration: 14, ease: "easeInOut", repeat: Infinity }}
+        transition={{ duration: 16, ease: "easeInOut", repeat: Infinity }}
       />
-      {/* Layer 3: drifting diagonal stripes (Plan A signature) */}
+      {/* Layer 3: drifting diagonal stripes (Plan A signature, opacity 0.035 in dark theme) */}
       <Stripes drift />
-      {/* Layer 4: focal orb */}
-      <HeroOrb />
-      {/* Layer 5: vignette */}
+      {/* Layer 4: focal planet — replaces the orb. */}
+      <HeroPlanet />
+      {/*
+        Layer 5: vignette.
+        Pulled darker (0.85 vs 0.7) and the inner clear region tightened
+        from 30% → 24% so the corners go properly black. The planet sits
+        in the bright pocket; everything around it falls off.
+      */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.7) 90%)"
+            "radial-gradient(ellipse at 50% 42%, transparent 24%, rgba(0,0,0,0.85) 90%)"
         }}
       />
 
@@ -89,12 +107,17 @@ export function Hero() {
         >
           Игровая экономика,
           <br />
-          <span className="text-white/55">собранная заново.</span>
+          {/*
+            Bumped from 0.55 → 0.62 against the new darker bg so the
+            second line still reads at small viewports without losing
+            the hierarchy contrast we want against the first line.
+          */}
+          <span className="text-white/[0.62]">собранная заново.</span>
         </motion.h1>
 
         <motion.p
           variants={item}
-          className="max-w-2xl text-balance text-[17px] leading-relaxed text-white/60"
+          className="max-w-2xl text-balance text-[17px] leading-relaxed text-white/[0.66]"
         >
           Маркетплейс, аренда, автодоставка и боты для FunPay, Starvell и Playerok —
           в одной платформе. Эскроу, мгновенные ключи, 552 функции под капотом.

@@ -7,15 +7,20 @@
    ───────────────────────────────────────────────────────────── */
 
 :root {
-  --bg: #050507;
+  /*
+   * Darker iteration: bg now true black, secondary surface 0x030305
+   * (was 0x050507) so glass cards still pop. Glass + line opacities
+   * dialed down ~25% to deepen the room without making text fade.
+   */
+  --bg: #030305;
   --bg-deep: #000000;
   --fg: #FFFFFF;
-  --muted: #8E8E93;
-  --line: rgba(255, 255, 255, 0.05);
-  --line-strong: rgba(255, 255, 255, 0.12);
-  --glass: rgba(255, 255, 255, 0.06);
-  --glass-strong: rgba(255, 255, 255, 0.10);
-  --border: rgba(255, 255, 255, 0.12);
+  --muted: #6E6E73;
+  --line: rgba(255, 255, 255, 0.035);
+  --line-strong: rgba(255, 255, 255, 0.10);
+  --glass: rgba(255, 255, 255, 0.04);
+  --glass-strong: rgba(255, 255, 255, 0.075);
+  --border: rgba(255, 255, 255, 0.09);
   --success: #30D158;
   --warning: #FF9F0A;
   --error: #FF453A;
@@ -59,10 +64,15 @@ body {
    ───────────────────────────────────────────────────────────── */
 
 .stripes {
+  /*
+   * Plan A's signature 3px / 45deg lines — opacity now 0.035 (was 0.05)
+   * so the room reads darker but the texture still shows under raking
+   * light from the planet glow.
+   */
   background-image: repeating-linear-gradient(
     45deg,
-    rgba(255, 255, 255, 0.05) 0,
-    rgba(255, 255, 255, 0.05) 3px,
+    rgba(255, 255, 255, 0.035) 0,
+    rgba(255, 255, 255, 0.035) 3px,
     transparent 3px,
     transparent 24px
   );
@@ -72,19 +82,24 @@ body {
 .stripes-fine {
   background-image: repeating-linear-gradient(
     45deg,
-    rgba(255, 255, 255, 0.04) 0,
-    rgba(255, 255, 255, 0.04) 1px,
+    rgba(255, 255, 255, 0.025) 0,
+    rgba(255, 255, 255, 0.025) 1px,
     transparent 1px,
     transparent 12px
   );
 }
 
 .aurora {
+  /*
+   * Aurora is the only large-area color in the hero — drop intensity
+   * to ~60% of the previous values and shift the green hotspot off the
+   * focal area so the planet (added in this PR) is the brightest object.
+   */
   background:
-    radial-gradient(60% 50% at 20% 20%, rgba(120, 180, 255, 0.10), transparent 60%),
-    radial-gradient(50% 40% at 85% 30%, rgba(255, 90, 130, 0.08), transparent 60%),
-    radial-gradient(60% 50% at 50% 90%, rgba(80, 230, 170, 0.07), transparent 60%);
-  filter: blur(40px);
+    radial-gradient(55% 45% at 20% 20%, rgba(120, 180, 255, 0.06), transparent 65%),
+    radial-gradient(45% 35% at 85% 30%, rgba(255, 90, 130, 0.05), transparent 65%),
+    radial-gradient(55% 45% at 80% 95%, rgba(80, 230, 170, 0.04), transparent 65%);
+  filter: blur(48px);
 }
 
 .grain {
@@ -104,23 +119,24 @@ body {
 
 .glass {
   background: var(--glass);
-  backdrop-filter: blur(40px) saturate(140%);
-  -webkit-backdrop-filter: blur(40px) saturate(140%);
+  backdrop-filter: blur(40px) saturate(135%);
+  -webkit-backdrop-filter: blur(40px) saturate(135%);
   border: 1px solid var(--border);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.10),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .glass-strong {
   background: var(--glass-strong);
-  backdrop-filter: blur(60px) saturate(160%);
-  -webkit-backdrop-filter: blur(60px) saturate(160%);
+  backdrop-filter: blur(60px) saturate(150%);
+  -webkit-backdrop-filter: blur(60px) saturate(150%);
   border: 1px solid var(--border);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
-    0 30px 80px -20px rgba(0, 0, 0, 0.8);
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    /* Deeper drop shadow against the darker bg so cards keep their lift. */
+    0 40px 100px -24px rgba(0, 0, 0, 0.92);
 }
 
 /* Hairline divider used between sections (impeccable: no side-stripe borders) */
@@ -180,4 +196,289 @@ body {
   outline: 2px solid rgba(255, 255, 255, 0.7);
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────
+   HeroPlanet — animated motion planet on the home screen
+   See: components/hero/HeroPlanet.tsx for the full rationale.
+
+   Sizing is responsive via clamp() on a single CSS var (--planet);
+   every layer is positioned relative to that so the whole assembly
+   scales as one unit. We avoid SVG here on purpose — masked CSS
+   gradients render at native pixel density without rasterization.
+   ───────────────────────────────────────────────────────────── */
+
+.planet-stage {
+  --planet: clamp(280px, 42vmin, 560px);
+  width: var(--planet);
+  height: var(--planet);
+  /*
+   * 3D context for the parallax tilt. perspective on the parent so
+   * rotateY/rotateX of children read as pseudo-3D rather than as
+   * a flat skew.
+   */
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+/* ── Atmosphere halo ──────────────────────────────────────── */
+
+.planet-atmosphere {
+  position: absolute;
+  /* 14% larger than the shell — the visible halo. */
+  inset: -14%;
+  border-radius: 999px;
+  /* Lit-side bias: the brighter spot of the halo is on the side
+     facing the (notional) sun at upper-left. */
+  background:
+    radial-gradient(
+      circle at 32% 28%,
+      rgba(150, 200, 255, 0.22) 0%,
+      rgba(150, 200, 255, 0.10) 18%,
+      rgba(150, 200, 255, 0.03) 38%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 56%,
+      rgba(120, 170, 230, 0.08) 60%,
+      transparent 78%
+    );
+  filter: blur(8px);
+  will-change: transform;
+}
+
+/* ── Planet shell — clips everything inside to a sphere ───── */
+
+.planet-shell {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  /*
+   * Tinted base so the unlit fraction is dark blue-grey rather than
+   * pure black. Pure-black night sides looked like holes in the page.
+   */
+  background: radial-gradient(
+    circle at 50% 50%,
+    #0a1320 0%,
+    #060a13 70%,
+    #030509 100%
+  );
+  /* Subtle inner edge so the sphere reads as a body, not a disc. */
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 -30px 80px rgba(0, 0, 0, 0.55);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* ── Surface: rotating conic gradient masked to a sphere ───── */
+
+.planet-surface {
+  position: absolute;
+  /* The surface layer is intentionally 220% wider than the shell.
+     Together with the radial mask below, this gives the illusion of
+     looking at a curved surface where bands slide off the limb. */
+  inset: -60% -60%;
+  background: conic-gradient(
+    from 0deg,
+    #1c3658 0deg,
+    #2a4a72 28deg,
+    #1a2c48 60deg,
+    #2f5b8c 95deg,
+    #15243a 130deg,
+    #28466e 170deg,
+    #1a2c48 210deg,
+    #2c5485 250deg,
+    #16263e 290deg,
+    #1c3658 360deg
+  );
+  /* Radial mask: full-opacity in the middle, falls off near the limb
+     so the lit edge softens and the conic seam never lands on the
+     visible side. */
+  -webkit-mask: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 50%,
+    rgba(0, 0, 0, 0.8) 75%,
+    transparent 100%
+  );
+          mask: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 50%,
+    rgba(0, 0, 0, 0.8) 75%,
+    transparent 100%
+  );
+  animation: planet-spin 64s linear infinite;
+  will-change: transform;
+}
+
+/* ── Clouds: second conic in different colors and direction ── */
+
+.planet-clouds {
+  position: absolute;
+  inset: -55% -55%;
+  /* Two-tone cloud bands. Lower opacity so they overlay the surface
+     instead of replacing it. */
+  background: conic-gradient(
+    from 90deg,
+    rgba(255, 255, 255, 0.16) 0deg,
+    rgba(255, 255, 255, 0.04) 40deg,
+    rgba(180, 210, 240, 0.12) 90deg,
+    rgba(255, 255, 255, 0.02) 140deg,
+    rgba(220, 235, 255, 0.10) 200deg,
+    rgba(255, 255, 255, 0.03) 260deg,
+    rgba(200, 220, 245, 0.09) 320deg,
+    rgba(255, 255, 255, 0.16) 360deg
+  );
+  /* Same circular mask, slightly tighter so clouds don't bleed past
+     the limb. */
+  -webkit-mask: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 48%,
+    rgba(0, 0, 0, 0.6) 72%,
+    transparent 96%
+  );
+          mask: radial-gradient(
+    circle at 50% 50%,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 1) 48%,
+    rgba(0, 0, 0, 0.6) 72%,
+    transparent 96%
+  );
+  /* Reverse direction + faster period — desyncs from the surface so
+     the two layers never reach the same alignment twice in a row. */
+  animation: planet-spin-reverse 38s linear infinite;
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  will-change: transform;
+}
+
+/* ── Terminator: fixed directional shadow ────────────────── */
+
+.planet-terminator {
+  position: absolute;
+  inset: 0;
+  /* The dark side of the planet. Lit from upper-left → shadow falls
+     toward lower-right. Linear gradient is enough since both surface
+     and clouds rotate underneath it. */
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    transparent 35%,
+    rgba(0, 0, 0, 0.45) 65%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+/* ── Specular highlight on the lit hemisphere ────────────── */
+
+.planet-specular {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    /* Deliberately offset toward upper-left so it reads as a sun
+       reflection on a curved surface, not a centered glow. */
+    circle at 28% 28%,
+    rgba(255, 255, 255, 0.38) 0%,
+    rgba(255, 255, 255, 0.12) 12%,
+    transparent 30%
+  );
+  border-radius: 999px;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* ── Moon orbit ──────────────────────────────────────────── */
+
+.planet-orbit {
+  position: absolute;
+  /* Orbit is 60% wider than the planet — large enough to read as
+     "around the planet" without the moon hugging the limb. */
+  inset: -30%;
+  border-radius: 999px;
+  /* Squash on Y so the orbit is an ellipse — implies the orbital
+     plane is tilted away from the viewer. */
+  transform: rotateZ(-12deg) scaleY(0.42);
+  animation: planet-spin 22s linear infinite;
+  will-change: transform;
+}
+
+.planet-moon {
+  position: absolute;
+  /* Pin to the right edge of the orbit; the parent's rotation traces
+     the actual circle. */
+  top: 50%;
+  right: -1%;
+  transform: translateY(-50%);
+  width: 6.2%;
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 35% 30%,
+    #d6dde5 0%,
+    #8a93a1 55%,
+    #2e333d 100%
+  );
+  box-shadow:
+    inset -2px -3px 4px rgba(0, 0, 0, 0.5),
+    0 0 14px rgba(180, 200, 230, 0.25);
+}
+
+/* ── Background stars ────────────────────────────────────── */
+
+.planet-stars {
+  position: absolute;
+  /* Stars cover a wider area than the planet so they extend behind
+     the headline / stat panel without an obvious cut-off. */
+  inset: -40%;
+  border-radius: 999px;
+  /* radial-gradient cluster of 1px points. Each entry is one star.
+     Tuned by hand — looks more natural than a uniform grid. */
+  background:
+    radial-gradient(1px 1px at 18% 22%, rgba(255, 255, 255, 0.65), transparent 100%),
+    radial-gradient(1px 1px at 72% 14%, rgba(255, 255, 255, 0.50), transparent 100%),
+    radial-gradient(1px 1px at 88% 64%, rgba(200, 220, 255, 0.55), transparent 100%),
+    radial-gradient(1px 1px at 12% 78%, rgba(255, 255, 255, 0.45), transparent 100%),
+    radial-gradient(1px 1px at 44% 52%, rgba(255, 255, 255, 0.35), transparent 100%),
+    radial-gradient(1px 1px at 60% 88%, rgba(220, 230, 255, 0.50), transparent 100%),
+    radial-gradient(1px 1px at 30% 38%, rgba(255, 255, 255, 0.30), transparent 100%),
+    radial-gradient(1px 1px at 80% 30%, rgba(255, 255, 255, 0.45), transparent 100%);
+  opacity: 0.7;
+  /* Twinkle is uniform across all stars — cheap and reads as ambient
+     atmosphere; per-star phases would be over-engineered for this
+     much surface area. */
+  animation: planet-twinkle 6s ease-in-out infinite;
+}
+
+/* ── Animations ─────────────────────────────────────────── */
+
+@keyframes planet-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes planet-spin-reverse {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+
+@keyframes planet-twinkle {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 0.45; }
+}
+
+/* When the user opted into reduced motion, the global rule at the
+   top of the file caps animations to 1ms — but we also want the
+   parallax tilt and orbit ellipse to stop at a clean rest pose.
+   The .planet-static toggle keeps the visual but freezes motion. */
+.planet-static,
+.planet-static * {
+  animation: none !important;
 }
