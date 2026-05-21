@@ -1,109 +1,127 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
-import { Search, ShoppingBag, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, Search, ShoppingBag, User } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-const NAV = [
-  { href: "/marketplace", label: "Маркет" },
-  { href: "/shop", label: "Магазин" },
-  { href: "/rental", label: "Аренда" },
-  { href: "/automation", label: "Авто" },
-  { href: "/support", label: "Поддержка" }
+const nav = [
+  { name: "Каталог", href: "/catalog" },
+  { name: "Игры", href: "/catalog?type=games" },
+  { name: "Услуги", href: "/catalog?type=services" },
+  { name: "Безопасность", href: "/security" }
 ];
 
 export function Header() {
-  const { scrollY } = useScroll();
-  // header tightens & gets stronger glass on scroll — production polish (Jakub)
-  const backdropFilter = useTransform(
-    scrollY,
-    [0, 200],
-    ["blur(16px) saturate(140%)", "blur(40px) saturate(160%)"]
-  );
-  const bg = useTransform(scrollY, [0, 200], ["rgba(255,255,255,0.02)", "rgba(255,255,255,0.06)"]);
-  const border = useTransform(
-    scrollY,
-    [0, 200],
-    ["rgba(255,255,255,0.06)", "rgba(255,255,255,0.14)"]
-  );
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 sm:pt-5">
-      <motion.nav
-        style={{ background: bg, borderColor: border, backdropFilter, WebkitBackdropFilter: backdropFilter }}
-        className={cn(
-          "mx-auto flex h-14 max-w-[1400px] items-center justify-between gap-4 rounded-full border px-3 sm:px-5",
-          "backdrop-blur-liquid"
-        )}
-      >
-        <Link href="/" className="flex items-center gap-2 pl-1">
-          <Logo />
-          <span className="hidden text-[15px] font-semibold tracking-tight sm:inline">
-            NexusMarket
+    <header
+      className={cn(
+        "fixed inset-x-0 top-0 z-50 transition-all duration-500 ease-warp",
+        scrolled
+          ? "border-b border-white/[0.07] bg-space-black/80 backdrop-blur-nebula"
+          : "border-b border-transparent"
+      )}
+    >
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-5 lg:px-8">
+        <Link href="/" className="flex items-center gap-2.5" aria-label="KOCMOC">
+          <CosmicLogo />
+          <span className="font-display text-[18px] font-medium tracking-[0.18em] text-space-white">
+            KOCMOC
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-1 md:flex">
-          {NAV.map((n) => (
-            <li key={n.href}>
-              <Link
-                href={n.href}
-                className="rounded-full px-3.5 py-2 text-[13.5px] text-white/70 transition-colors duration-300 ease-out-expo hover:bg-white/5 hover:text-white"
-              >
-                {n.label}
-              </Link>
-            </li>
+        <nav className="hidden items-center gap-1 md:flex">
+          {nav.map((item) => (
+            <Link
+              key={item.name}
+              href={item.href}
+              className="rounded-full px-4 py-1.5 text-[13.5px] font-medium text-space-lunar/85 transition-colors hover:text-space-white"
+            >
+              {item.name}
+            </Link>
           ))}
-        </ul>
+        </nav>
 
         <div className="flex items-center gap-1.5">
-          <IconBtn aria-label="Поиск">
-            <Search className="h-4 w-4" strokeWidth={1.6} />
-          </IconBtn>
-          <IconBtn aria-label="Корзина">
-            <ShoppingBag className="h-4 w-4" strokeWidth={1.6} />
-          </IconBtn>
-          <Link
-            href="/profile"
-            className="ml-1 inline-flex h-9 items-center gap-2 rounded-full bg-white px-4 text-[13px] font-medium text-black transition-transform duration-300 ease-out-expo active:scale-[0.97]"
+          <button
+            aria-label="Поиск"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-space-lunar/70 transition-colors hover:bg-white/[0.05] hover:text-space-white"
           >
-            <User className="h-3.5 w-3.5" strokeWidth={2} />
-            <span>Войти</span>
+            <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </button>
+          <button
+            aria-label="Уведомления"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full text-space-lunar/70 transition-colors hover:bg-white/[0.05] hover:text-space-white"
+          >
+            <Bell className="h-[18px] w-[18px]" strokeWidth={1.5} />
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-nova-green animate-pulse-dot" />
+          </button>
+          <Link
+            href="/dashboard"
+            aria-label="Корзина"
+            className="hidden h-9 w-9 items-center justify-center rounded-full text-space-lunar/70 transition-colors hover:bg-white/[0.05] hover:text-space-white md:flex"
+          >
+            <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </Link>
+          <div className="ml-1 hidden h-6 w-px bg-white/10 md:block" />
+          <Link
+            href="/auth/login"
+            className="hidden h-9 items-center rounded-full px-4 text-[13px] font-medium text-space-lunar/85 transition-colors hover:text-space-white md:inline-flex"
+          >
+            Войти
+          </Link>
+          <Link
+            href="/auth/register"
+            className="ml-1 hidden h-9 items-center rounded-full bg-space-white px-4 text-[13px] font-medium text-space-black transition-all hover:shadow-halo-strong md:inline-flex"
+          >
+            Регистрация
+          </Link>
+          <Link
+            href="/dashboard"
+            aria-label="Профиль"
+            className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-space-lunar md:hidden"
+          >
+            <User className="h-[18px] w-[18px]" strokeWidth={1.5} />
           </Link>
         </div>
-      </motion.nav>
+      </div>
     </header>
   );
 }
 
-function IconBtn({ children, ...rest }: React.HTMLAttributes<HTMLButtonElement>) {
+function CosmicLogo() {
   return (
-    <button
-      {...rest}
-      className="grid h-9 w-9 place-items-center rounded-full text-white/75 transition-colors duration-300 ease-out-expo hover:bg-white/10 hover:text-white"
-    >
-      {children}
-    </button>
-  );
-}
-
-function Logo() {
-  return (
-    <span
-      aria-hidden
-      className="grid h-8 w-8 place-items-center rounded-xl bg-white text-black"
-      style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.6)" }}
-    >
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path
-          d="M2 12V2L12 12V2"
-          stroke="black"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+    <div className="relative flex h-8 w-8 items-center justify-center">
+      <svg
+        viewBox="0 0 32 32"
+        className="absolute inset-0 h-full w-full animate-orbit-med text-space-white/60"
+        aria-hidden
+      >
+        <ellipse
+          cx="16"
+          cy="16"
+          rx="14"
+          ry="6"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="0.5"
+          strokeDasharray="2 3"
         />
       </svg>
-    </span>
+      <div className="absolute h-3.5 w-3.5 rounded-full bg-space-white shadow-halo-white" />
+      <div
+        aria-hidden
+        className="absolute h-3.5 w-3.5 rounded-full bg-space-white opacity-30 blur-md"
+      />
+    </div>
   );
 }

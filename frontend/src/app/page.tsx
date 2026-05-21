@@ -1,17 +1,23 @@
-import { Hero } from "@/components/hero/Hero";
-import { MarketplacePreview } from "@/components/home/MarketplacePreview";
-import { AutomationShowcase } from "@/components/home/AutomationShowcase";
-import { ModulesGrid } from "@/components/home/ModulesGrid";
-import { CTA } from "@/components/home/CTA";
+import { Hero } from "@/components/home/Hero";
+import { OrbitCategories } from "@/components/home/OrbitCategories";
+import { PopularGames } from "@/components/home/PopularGames";
+import { LiveDeals } from "@/components/home/LiveDeals";
+import { PlatformStats } from "@/components/home/PlatformStats";
+import { Advantages } from "@/components/home/Advantages";
+import { HowItWorks } from "@/components/home/HowItWorks";
+import { CTASection } from "@/components/home/CTASection";
 
 export default function HomePage() {
   return (
     <>
       <Hero />
-      <MarketplacePreview />
-      <AutomationShowcase />
-      <ModulesGrid />
-      <CTA />
+      <OrbitCategories />
+      <PopularGames />
+      <LiveDeals />
+      <PlatformStats />
+      <Advantages />
+      <HowItWorks />
+      <CTASection />
     </>
   );
 }
