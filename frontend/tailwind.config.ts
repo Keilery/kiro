@@ -5,27 +5,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // iOS 26 inspired palette (per Plan A)
-        ink: {
-          DEFAULT: "#000000",
-          950: "#050507",
-          900: "#0A0A0C",
-          800: "#111114"
+        // === KOCMOC космическая палитра ===
+        space: {
+          black: "#0A0A0A",
+          deep: "#111111",
+          nebula: "#1A1A1A",
+          gray: "#2A2A2A",
+          dust: "#888888",
+          lunar: "#E5E5E5",
+          white: "#FFFFFF"
         },
-        chrome: {
-          50: "#FFFFFF",
-          200: "rgba(255,255,255,0.85)",
-          400: "rgba(255,255,255,0.55)",
-          500: "#8E8E93",
-          600: "rgba(255,255,255,0.30)",
-          700: "rgba(255,255,255,0.12)",
-          800: "rgba(255,255,255,0.08)",
-          900: "rgba(255,255,255,0.05)"
-        },
-        signal: {
-          success: "#30D158",
-          warning: "#FF9F0A",
-          error: "#FF453A"
+        nova: {
+          green: "#00FF88",
+          red: "#FF3333",
+          blue: "#4488FF",
+          amber: "#FFAA00"
         }
       },
       fontFamily: {
@@ -34,33 +28,48 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "monospace"]
       },
       borderRadius: {
-        ios: "22px",
-        "ios-lg": "28px",
-        "ios-sm": "14px"
+        orbit: "20px",
+        "orbit-lg": "32px",
+        "orbit-sm": "12px"
       },
       backdropBlur: {
-        liquid: "40px"
+        nebula: "32px"
       },
       boxShadow: {
-        "glass-edge":
-          "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(255,255,255,0.04)",
-        "glass-deep":
-          "inset 0 1px 0 rgba(255,255,255,0.16), 0 30px 80px -20px rgba(0,0,0,0.8)"
+        "orbit-edge":
+          "inset 0 1px 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(255,255,255,0.04)",
+        "orbit-deep":
+          "inset 0 1px 0 rgba(255,255,255,0.14), 0 28px 80px -16px rgba(0,0,0,0.9)",
+        "halo-white":
+          "0 0 0 1px rgba(255,255,255,0.15), 0 0 32px rgba(255,255,255,0.10)",
+        "halo-strong":
+          "0 0 0 1px rgba(255,255,255,0.30), 0 0 64px rgba(255,255,255,0.18)"
       },
       transitionTimingFunction: {
-        // ease-out exponential curves (per impeccable / motion principles)
-        "out-quart": "cubic-bezier(0.25, 1, 0.5, 1)",
-        "out-quint": "cubic-bezier(0.22, 1, 0.36, 1)",
-        "out-expo": "cubic-bezier(0.16, 1, 0.3, 1)"
+        gravity: "cubic-bezier(0.16, 1, 0.3, 1)",
+        warp: "cubic-bezier(0.22, 1, 0.36, 1)",
+        orbit: "cubic-bezier(0.25, 1, 0.5, 1)"
       },
       keyframes: {
-        "stripes-drift": {
-          "0%": { backgroundPosition: "0px 0px" },
-          "100%": { backgroundPosition: "120px 120px" }
+        "twinkle": {
+          "0%, 100%": { opacity: "0.3" },
+          "50%": { opacity: "1" }
         },
-        "aurora-shift": {
-          "0%, 100%": { transform: "translate3d(0,0,0) scale(1)" },
-          "50%": { transform: "translate3d(2%, -1%, 0) scale(1.08)" }
+        "orbit-spin": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" }
+        },
+        "orbit-spin-reverse": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(-360deg)" }
+        },
+        "drift": {
+          "0%, 100%": { transform: "translate3d(0,0,0)" },
+          "50%": { transform: "translate3d(0,-6px,0)" }
+        },
+        "halo-breathe": {
+          "0%, 100%": { opacity: "0.35", transform: "scale(1)" },
+          "50%": { opacity: "0.65", transform: "scale(1.06)" }
         },
         "shimmer": {
           "0%": { transform: "translateX(-100%)" },
@@ -69,13 +78,28 @@ const config: Config = {
         "pulse-dot": {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
           "50%": { opacity: "0.55", transform: "scale(0.9)" }
+        },
+        "scan-line": {
+          "0%": { transform: "translateY(-100%)" },
+          "100%": { transform: "translateY(100vh)" }
+        },
+        "fade-up": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" }
         }
       },
       animation: {
-        "stripes-drift": "stripes-drift 18s linear infinite",
-        "aurora-shift": "aurora-shift 14s ease-in-out infinite",
+        "twinkle": "twinkle 3s ease-in-out infinite",
+        "orbit-slow": "orbit-spin 120s linear infinite",
+        "orbit-med": "orbit-spin 60s linear infinite",
+        "orbit-fast": "orbit-spin 30s linear infinite",
+        "orbit-reverse": "orbit-spin-reverse 90s linear infinite",
+        "drift": "drift 6s ease-in-out infinite",
+        "halo-breathe": "halo-breathe 6s ease-in-out infinite",
         "shimmer": "shimmer 2.4s ease-in-out infinite",
-        "pulse-dot": "pulse-dot 2.2s ease-in-out infinite"
+        "pulse-dot": "pulse-dot 2s ease-in-out infinite",
+        "scan-line": "scan-line 8s linear infinite",
+        "fade-up": "fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both"
       }
     }
   },
