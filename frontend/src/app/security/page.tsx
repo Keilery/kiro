@@ -109,7 +109,7 @@ export default function SecurityPage() {
             </h1>
             <p className="mt-7 max-w-[560px] text-[16px] leading-relaxed text-space-lunar/80">
               Эскроу-холд, KYC-верификация, ML-антифрод и сегрегированные счета —
-              девять слоёв защиты для каждой сделки. Кратко и без маркетинга:
+              восемь слоёв защиты для каждой сделки. Кратко и без маркетинга:
               что именно мы делаем, как, зачем.
             </p>
 
@@ -158,7 +158,7 @@ export default function SecurityPage() {
         {/* Слои защиты */}
         <GravityScroll className="mb-14">
           <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-space-dust">
-            // 9 слоёв защиты
+            // 8 слоёв защиты
           </div>
           <h2 className="mt-4 headline-hero text-[clamp(32px,4vw,56px)] text-space-white">
             Каждая орбита — закрытая

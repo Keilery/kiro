@@ -25,13 +25,13 @@ import { formatPrice } from "@/lib/format";
 
 const nav = [
   { name: "Обзор", href: "/dashboard", icon: TrendingUp, active: true },
-  { name: "Покупки", href: "/dashboard/orders", icon: ShoppingBag },
-  { name: "Продажи", href: "/dashboard/sales", icon: Package },
-  { name: "Баланс", href: "/dashboard/wallet", icon: Wallet },
+  { name: "Покупки", href: "/dashboard", icon: ShoppingBag },
+  { name: "Продажи", href: "/dashboard", icon: Package },
+  { name: "Баланс", href: "/dashboard", icon: Wallet },
   { name: "Сообщения", href: "/chat", icon: MessageCircle, badge: 3 },
-  { name: "Уведомления", href: "/dashboard/notifications", icon: Bell },
-  { name: "KYC", href: "/dashboard/kyc", icon: ShieldCheck },
-  { name: "Настройки", href: "/dashboard/settings", icon: Settings }
+  { name: "Уведомления", href: "/dashboard", icon: Bell },
+  { name: "KYC", href: "/security#kyc", icon: ShieldCheck },
+  { name: "Настройки", href: "/dashboard", icon: Settings }
 ];
 
 const recentOrders = [
@@ -116,12 +116,12 @@ export default function DashboardPage() {
                     орбита · последние 7 дней
                   </div>
                 </div>
-                <Link
-                  href="/dashboard/orders"
-                  className="font-mono text-[11px] uppercase tracking-[0.18em] text-space-lunar hover:text-space-white"
-                >
-                  Все →
-                </Link>
+        <Link
+          href="/dashboard"
+          className="font-mono text-[11px] uppercase tracking-[0.18em] text-space-lunar hover:text-space-white"
+        >
+          Все →
+        </Link>
               </div>
               <div className="divide-y divide-white/[0.04]">
                 {recentOrders.map((o, i) => {

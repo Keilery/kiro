@@ -73,7 +73,7 @@ export default function ChatPage() {
         </div>
 
         <OrbitCard className="overflow-hidden">
-          <div className="grid h-[680px] grid-cols-[280px_1fr_320px] divide-x divide-white/[0.06]">
+          <div className="grid h-[680px] grid-cols-1 divide-y divide-white/[0.06] lg:grid-cols-[280px_1fr_320px] lg:divide-y-0 lg:divide-x lg:divide-white/[0.06]">
             {/* Chat list */}
             <div className="flex flex-col">
               <div className="border-b border-white/[0.06] p-4">

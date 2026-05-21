@@ -15,8 +15,8 @@ const columns = [
     title: "Аккаунт",
     links: [
       { name: "Личный кабинет", href: "/dashboard" },
-      { name: "Стать продавцом", href: "/dashboard/sell" },
-      { name: "Баланс и выплаты", href: "/dashboard/wallet" },
+      { name: "Стать продавцом", href: "/auth/register" },
+      { name: "Баланс и выплаты", href: "/dashboard" },
       { name: "Чат и сделки", href: "/chat" }
     ]
   },
@@ -32,10 +32,10 @@ const columns = [
   {
     title: "О платформе",
     links: [
-      { name: "Что такое KOCMOC", href: "/about" },
-      { name: "Документация API", href: "/docs" },
-      { name: "Правила", href: "/terms" },
-      { name: "Конфиденциальность", href: "/privacy" }
+      { name: "Что такое KOCMOC", href: "/security" },
+      { name: "Документация API", href: "/security" },
+      { name: "Правила", href: "/security" },
+      { name: "Конфиденциальность", href: "/security" }
     ]
   }
 ];
@@ -108,13 +108,13 @@ export function Footer() {
           <div className="flex flex-wrap items-center gap-5 text-[12px] text-space-dust">
             <span>© 2026 KOCMOC. Все орбиты защищены.</span>
             <span className="hidden h-3 w-px bg-white/10 sm:block" />
-            <Link href="/terms" className="hover:text-space-lunar">
+            <Link href="/security" className="hover:text-space-lunar">
               Условия
             </Link>
-            <Link href="/privacy" className="hover:text-space-lunar">
+            <Link href="/security" className="hover:text-space-lunar">
               Конфиденциальность
             </Link>
-            <Link href="/cookies" className="hover:text-space-lunar">
+            <Link href="/security" className="hover:text-space-lunar">
               Cookies
             </Link>
           </div>

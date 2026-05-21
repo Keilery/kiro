@@ -53,7 +53,11 @@ export default function RegisterPage() {
             Эти данные видны только тебе. Username — публичный.
           </p>
 
-          <form className="mt-7 space-y-4">
+          <form
+            className="mt-7 space-y-4"
+            onSubmit={(e) => e.preventDefault()}
+            action="#"
+          >
             <CosmicInput
               label="username"
               iconLeft={<User className="h-4 w-4" />}
@@ -86,11 +90,11 @@ export default function RegisterPage() {
               </span>
               <span>
                 Принимаю{" "}
-                <Link href="/terms" className="underline-offset-4 hover:underline">
+                <Link href="/security" className="underline-offset-4 hover:underline">
                   правила платформы
                 </Link>{" "}
                 и{" "}
-                <Link href="/privacy" className="underline-offset-4 hover:underline">
+                <Link href="/security" className="underline-offset-4 hover:underline">
                   политику конфиденциальности
                 </Link>
                 . Согласен на обработку персональных данных.

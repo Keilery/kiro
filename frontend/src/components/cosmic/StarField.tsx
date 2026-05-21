@@ -93,7 +93,10 @@ export function StarField() {
       // Звёзды — 3 слоя параллакса по z
       for (const s of stars) {
         const parallax = scrollRef.current * (0.05 + s.z * 0.35);
-        const y = ((s.y - parallax) % (window.innerHeight + 200)) - 100;
+        // Нормализуем модуль к положительному диапазону, иначе при
+        // длительном скролле звёзды кластеризуются и пропадают.
+        const wrap = window.innerHeight + 200;
+        const y = ((((s.y - parallax) % wrap) + wrap) % wrap) - 100;
         if (!reduced) s.twinkle += (dt / 1000) * s.twinkleSpeed;
         const alpha =
           0.35 +

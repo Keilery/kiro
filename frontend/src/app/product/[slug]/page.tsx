@@ -326,7 +326,7 @@ function SellerCard({ product }: { product: typeof products[0] }) {
       </div>
 
       <Link
-        href="/profile/seller"
+        href="/dashboard"
         className="mt-5 inline-flex items-center gap-1.5 text-[12.5px] text-space-lunar hover:text-space-white"
       >
         Профиль продавца

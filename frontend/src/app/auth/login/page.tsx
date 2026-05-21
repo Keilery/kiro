@@ -61,13 +61,17 @@ export default function LoginPage() {
               Введи email или username — мы запомним устройство.
             </p>
 
-            <form className="mt-7 space-y-4">
+            <form
+              className="mt-7 space-y-4"
+              onSubmit={(e) => e.preventDefault()}
+              action="#"
+            >
               <CosmicInput
                 label="email · username"
                 iconLeft={<Mail className="h-4 w-4" />}
-                type="email"
+                type="text"
                 placeholder="cosmonaut@kocmoc.space"
-                autoComplete="email"
+                autoComplete="username"
               />
               <CosmicInput
                 label="пароль"
@@ -93,7 +97,7 @@ export default function LoginPage() {
                   <span className="block h-4 w-4 rounded border border-white/15 bg-white/[0.025] transition-all peer-checked:border-space-white peer-checked:bg-space-white" />
                   Запомнить устройство
                 </label>
-                <Link href="/auth/forgot" className="text-space-lunar hover:text-space-white">
+                <Link href="/security" className="text-space-lunar hover:text-space-white">
                   Забыли пароль?
                 </Link>
               </div>
